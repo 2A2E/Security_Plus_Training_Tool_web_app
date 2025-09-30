@@ -13,7 +13,6 @@ from models.question_models import (
 )
 from models.enums import QuestionType, DifficultyLevel, QuestionCategory
 
-
 class TestQuestionModel:
     """Test cases for base QuestionModel class"""
     
@@ -137,7 +136,6 @@ class TestQuestionModel:
         assert isinstance(question.created_at, datetime)
         assert isinstance(question.updated_at, datetime)
 
-
 class TestMultipleChoiceQuestion:
     """Test cases for MultipleChoiceQuestion class"""
     
@@ -196,7 +194,6 @@ class TestMultipleChoiceQuestion:
         assert result['options'] == ["A security device", "A network protocol"]
         assert result['correct_answer'] == 0
 
-
 class TestTrueFalseQuestion:
     """Test cases for TrueFalseQuestion class"""
     
@@ -247,7 +244,6 @@ class TestTrueFalseQuestion:
         
         assert 'correct_answer' in result
         assert result['correct_answer'] is True
-
 
 class TestFillInBlankQuestion:
     """Test cases for FillInBlankQuestion class"""
@@ -305,7 +301,6 @@ class TestFillInBlankQuestion:
         assert 'case_sensitive' in result
         assert result['correct_answers'] == ["Public Key Infrastructure"]
         assert result['case_sensitive'] is False
-
 
 class TestScenarioBasedQuestion:
     """Test cases for ScenarioBasedQuestion class"""
@@ -371,7 +366,6 @@ class TestScenarioBasedQuestion:
         assert result['scenario_text'] == "Test scenario"
         assert result['options'] == ["Option A", "Option B"]
         assert result['correct_answer'] == 0
-
 
 class TestCreateQuestionFactory:
     """Test cases for create_question factory function"""
