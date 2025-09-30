@@ -260,4 +260,4 @@ def create_question(question_type: str, **kwargs) -> QuestionModel:
     elif question_type == QuestionType.SCENARIO_BASED.value:
         return ScenarioBasedQuestion(**kwargs)
     else:
-        return QuestionModel(**kwargs)
+        return QuestionModel(question_type=question_type, **kwargs)

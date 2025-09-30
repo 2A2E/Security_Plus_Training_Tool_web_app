@@ -125,11 +125,11 @@ class QuizSession:
     def _check_answer(self, question: Dict[str, Any], user_answer: str) -> Tuple[bool, str]:
         """Check if the user's answer is correct"""
         question_type = question.get('question_type', '')
-        correct_answer = self._get_correct_answer(question)
         explanation = question.get('explanation', 'No explanation available.')
         
         if question_type == 'multiple_choice':
             # For multiple choice, correct_answer is the index (0-based)
+            correct_answer = question.get('correct_answer', '0')
             try:
                 user_index = int(user_answer)
                 is_correct = str(user_index) == str(correct_answer)
@@ -137,6 +137,7 @@ class QuizSession:
                 is_correct = False
         
         elif question_type == 'true_false':
+            correct_answer = question.get('correct_answer', 'True')
             is_correct = user_answer.lower() == str(correct_answer).lower()
         
         elif question_type == 'fill_in_blank':
