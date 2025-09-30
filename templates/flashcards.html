@@ -1,0 +1,326 @@
+{% extends "base.html" %}
+
+{% block title %}Flashcards - Security+ Exam Prep{% endblock %}
+
+{% block content %}
+<div class="flashcards-container">
+    <div class="flashcards-header">
+        <div class="container">
+            <div class="header-content">
+                <div class="breadcrumb">
+                    <a href="{{ url_for('home') }}">Home</a>
+                    <i class="fas fa-chevron-right"></i>
+                    <span>Flashcards</span>
+                </div>
+                <h1>Security+ Flashcards</h1>
+                <p>Memorize key terms and concepts with interactive flashcards</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="flashcards-main">
+        <div class="container">
+            <div class="flashcards-layout">
+                <!-- Category Selection Sidebar -->
+                <div class="category-sidebar">
+                    <h3>Study Categories</h3>
+                    <div class="category-list">
+                        <div class="category-item active" data-category="all">
+                            <div class="category-icon">
+                                <i class="fas fa-globe"></i>
+                            </div>
+                            <div class="category-info">
+                                <h4>All Terms</h4>
+                                <span class="category-count">247 terms</span>
+                            </div>
+                        </div>
+                        
+                        <div class="category-item" data-category="acronyms">
+                            <div class="category-icon">
+                                <i class="fas fa-ab"></i>
+                            </div>
+                            <div class="category-info">
+                                <h4>Acronyms</h4>
+                                <span class="category-count">89 terms</span>
+                            </div>
+                        </div>
+                        
+                        <div class="category-item" data-category="attacks">
+                            <div class="category-icon">
+                                <i class="fas fa-bug"></i>
+                            </div>
+                            <div class="category-info">
+                                <h4>Attacks & Threats</h4>
+                                <span class="category-count">67 terms</span>
+                            </div>
+                        </div>
+                        
+                        <div class="category-item" data-category="cryptography">
+                            <div class="category-icon">
+                                <i class="fas fa-key"></i>
+                            </div>
+                            <div class="category-info">
+                                <h4>Cryptography</h4>
+                                <span class="category-count">45 terms</span>
+                            </div>
+                        </div>
+                        
+                        <div class="category-item" data-category="networking">
+                            <div class="category-icon">
+                                <i class="fas fa-network-wired"></i>
+                            </div>
+                            <div class="category-info">
+                                <h4>Networking</h4>
+                                <span class="category-count">38 terms</span>
+                            </div>
+                        </div>
+                        
+                        <div class="category-item" data-category="physical">
+                            <div class="category-icon">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <div class="category-info">
+                                <h4>Physical Security</h4>
+                                <span class="category-count">28 terms</span>
+                            </div>
+                        </div>
+                        
+                        <div class="category-item" data-category="compliance">
+                            <div class="category-icon">
+                                <i class="fas fa-gavel"></i>
+                            </div>
+                            <div class="category-info">
+                                <h4>Compliance & Laws</h4>
+                                <span class="category-count">23 terms</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Flashcard Area -->
+                <div class="flashcard-area">
+                    <div class="flashcard-controls">
+                        <div class="study-mode-toggle">
+                            <button class="mode-btn active" data-mode="term">
+                                <i class="fas fa-font"></i>
+                                Show Term
+                            </button>
+                            <button class="mode-btn" data-mode="definition">
+                                <i class="fas fa-book"></i>
+                                Show Definition
+                            </button>
+                        </div>
+                        
+                        <div class="flashcard-progress">
+                            <span class="current-card">1</span>
+                            <span class="separator">of</span>
+                            <span class="total-cards">247</span>
+                        </div>
+                    </div>
+
+                    <div class="flashcard-wrapper">
+                        <div class="flashcard" id="flashcard">
+                            <div class="flashcard-content">
+                                <div class="flashcard-side front">
+                                    <div class="card-header">
+                                        <span class="card-category">Acronyms</span>
+                                        <span class="card-type">Term</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <h2 class="card-title">AES</h2>
+                                        <div class="card-hint">
+                                            <i class="fas fa-lightbulb"></i>
+                                            <span>Click to reveal definition</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="flashcard-side back">
+                                    <div class="card-header">
+                                        <span class="card-category">Acronyms</span>
+                                        <span class="card-type">Definition</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <h3 class="card-title">Advanced Encryption Standard</h3>
+                                        <p class="card-definition">A symmetric encryption algorithm that uses block cipher with key sizes of 128, 192, or 256 bits. It's widely used for securing sensitive data and is considered highly secure.</p>
+                                        <div class="card-details">
+                                            <div class="detail-item">
+                                                <strong>Type:</strong> Symmetric Encryption
+                                            </div>
+                                            <div class="detail-item">
+                                                <strong>Key Sizes:</strong> 128, 192, 256 bits
+                                            </div>
+                                            <div class="detail-item">
+                                                <strong>Block Size:</strong> 128 bits
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flashcard-actions">
+                        <button class="action-btn prev-btn" disabled>
+                            <i class="fas fa-chevron-left"></i>
+                            Previous
+                        </button>
+                        
+                        <button class="action-btn flip-btn">
+                            <i class="fas fa-sync-alt"></i>
+                            Flip Card
+                        </button>
+                        
+                        <button class="action-btn next-btn">
+                            Next
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+
+                    <div class="study-options">
+                        <div class="option-group">
+                            <label class="option-label">
+                                <input type="checkbox" id="shuffle-cards" checked>
+                                <span class="checkmark"></span>
+                                Shuffle cards
+                            </label>
+                        </div>
+                        
+                        <div class="option-group">
+                            <label class="option-label">
+                                <input type="checkbox" id="auto-flip">
+                                <span class="checkmark"></span>
+                                Auto-flip after 3 seconds
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const flashcard = document.getElementById('flashcard');
+    const flipBtn = document.querySelector('.flip-btn');
+    const prevBtn = document.querySelector('.prev-btn');
+    const nextBtn = document.querySelector('.next-btn');
+    const categoryItems = document.querySelectorAll('.category-item');
+    const modeBtns = document.querySelectorAll('.mode-btn');
+    
+    let currentCard = 0;
+    let isFlipped = false;
+    let currentCategory = 'all';
+    
+    // Sample flashcard data
+    const flashcards = {
+        all: [
+            {
+                term: "AES",
+                definition: "Advanced Encryption Standard",
+                fullDefinition: "A symmetric encryption algorithm that uses block cipher with key sizes of 128, 192, or 256 bits. It's widely used for securing sensitive data and is considered highly secure.",
+                category: "Acronyms",
+                details: {
+                    type: "Symmetric Encryption",
+                    keySizes: "128, 192, 256 bits",
+                    blockSize: "128 bits"
+                }
+            },
+            {
+                term: "XSS",
+                definition: "Cross-Site Scripting",
+                fullDefinition: "A type of security vulnerability typically found in web applications. XSS attacks enable attackers to inject client-side scripts into web pages viewed by other users.",
+                category: "Attacks",
+                details: {
+                    type: "Web Application Attack",
+                    impact: "Data theft, session hijacking",
+                    prevention: "Input validation, output encoding"
+                }
+            }
+        ],
+        acronyms: [
+            {
+                term: "AES",
+                definition: "Advanced Encryption Standard",
+                fullDefinition: "A symmetric encryption algorithm that uses block cipher with key sizes of 128, 192, or 256 bits.",
+                category: "Acronyms",
+                details: {
+                    type: "Symmetric Encryption",
+                    keySizes: "128, 192, 256 bits",
+                    blockSize: "128 bits"
+                }
+            }
+        ]
+    };
+    
+    // Flip card functionality
+    flipBtn.addEventListener('click', function() {
+        flashcard.classList.toggle('flipped');
+        isFlipped = !isFlipped;
+    });
+    
+    // Category selection
+    categoryItems.forEach(item => {
+        item.addEventListener('click', function() {
+            categoryItems.forEach(cat => cat.classList.remove('active'));
+            this.classList.add('active');
+            currentCategory = this.dataset.category;
+            currentCard = 0;
+            updateCard();
+        });
+    });
+    
+    // Study mode toggle
+    modeBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            modeBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            // Update card display based on mode
+            updateCard();
+        });
+    });
+    
+    // Navigation
+    nextBtn.addEventListener('click', function() {
+        if (currentCard < flashcards[currentCategory].length - 1) {
+            currentCard++;
+            updateCard();
+        }
+    });
+    
+    prevBtn.addEventListener('click', function() {
+        if (currentCard > 0) {
+            currentCard--;
+            updateCard();
+        }
+    });
+    
+    function updateCard() {
+        const card = flashcards[currentCategory][currentCard];
+        if (!card) return;
+        
+        // Update card content
+        document.querySelector('.card-title').textContent = card.term;
+        document.querySelector('.back .card-title').textContent = card.definition;
+        document.querySelector('.card-definition').textContent = card.fullDefinition;
+        document.querySelector('.card-category').textContent = card.category;
+        
+        // Update progress
+        document.querySelector('.current-card').textContent = currentCard + 1;
+        document.querySelector('.total-cards').textContent = flashcards[currentCategory].length;
+        
+        // Update navigation buttons
+        prevBtn.disabled = currentCard === 0;
+        nextBtn.disabled = currentCard === flashcards[currentCategory].length - 1;
+        
+        // Reset flip state
+        flashcard.classList.remove('flipped');
+        isFlipped = false;
+    }
+    
+    // Initialize
+    updateCard();
+});
+</script>
+{% endblock %}

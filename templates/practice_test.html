@@ -1,0 +1,385 @@
+{% extends "base.html" %}
+
+{% block title %}Practice Tests - Security+ Exam Prep{% endblock %}
+
+{% block content %}
+<div class="practice-test-container">
+    <div class="practice-test-header">
+        <div class="container">
+            <div class="header-content">
+                <div class="breadcrumb">
+                    <a href="{{ url_for('home') }}">Home</a>
+                    <i class="fas fa-chevron-right"></i>
+                    <span>Practice Tests</span>
+                </div>
+                <h1>Security+ Practice Tests</h1>
+                <p>Simulate the real exam with configurable practice tests</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="practice-test-main">
+        <div class="container">
+            <div class="test-config-section">
+                <div class="config-card">
+                    <h2>Configure Your Practice Test</h2>
+                    <p>Customize your practice test to match your study needs</p>
+                    
+                    <div class="config-options">
+                        <div class="config-group">
+                            <h3>Test Settings</h3>
+                            
+                            <div class="config-item">
+                                <label for="question-count">Number of Questions</label>
+                                <select id="question-count" class="config-select">
+                                    <option value="20">20 Questions (15 minutes)</option>
+                                    <option value="40">40 Questions (30 minutes)</option>
+                                    <option value="60">60 Questions (45 minutes)</option>
+                                    <option value="80" selected>80 Questions (90 minutes)</option>
+                                    <option value="custom">Custom</option>
+                                </select>
+                            </div>
+                            
+                            <div class="config-item" id="custom-questions" style="display: none;">
+                                <label for="custom-count">Custom Question Count</label>
+                                <input type="number" id="custom-count" min="10" max="200" value="80" class="config-input">
+                            </div>
+                            
+                            <div class="config-item">
+                                <label for="time-limit">Time Limit</label>
+                                <select id="time-limit" class="config-select">
+                                    <option value="auto">Auto (1:15 per question)</option>
+                                    <option value="90" selected>90 minutes (Real exam)</option>
+                                    <option value="60">60 minutes (Intensive)</option>
+                                    <option value="120">120 minutes (Relaxed)</option>
+                                    <option value="unlimited">Unlimited</option>
+                                </select>
+                            </div>
+                            
+                            <div class="config-item">
+                                <label for="difficulty">Difficulty Level</label>
+                                <select id="difficulty" class="config-select">
+                                    <option value="mixed" selected>Mixed (Realistic)</option>
+                                    <option value="beginner">Beginner</option>
+                                    <option value="intermediate">Intermediate</option>
+                                    <option value="advanced">Advanced</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="config-group">
+                            <h3>Content Selection</h3>
+                            
+                            <div class="config-item">
+                                <label>Chapters to Include</label>
+                                <div class="checkbox-group">
+                                    <label class="checkbox-item">
+                                        <input type="checkbox" id="chapter1" checked>
+                                        <span class="checkmark"></span>
+                                        <span class="checkbox-label">
+                                            <strong>Chapter 1:</strong> General Security Concepts (24%)
+                                        </span>
+                                    </label>
+                                    
+                                    <label class="checkbox-item">
+                                        <input type="checkbox" id="chapter2" checked>
+                                        <span class="checkmark"></span>
+                                        <span class="checkbox-label">
+                                            <strong>Chapter 2:</strong> Threats, Vulnerabilities & Mitigations (30%)
+                                        </span>
+                                    </label>
+                                    
+                                    <label class="checkbox-item">
+                                        <input type="checkbox" id="chapter3" checked>
+                                        <span class="checkmark"></span>
+                                        <span class="checkbox-label">
+                                            <strong>Chapter 3:</strong> Security Architecture (21%)
+                                        </span>
+                                    </label>
+                                    
+                                    <label class="checkbox-item">
+                                        <input type="checkbox" id="chapter4" checked>
+                                        <span class="checkmark"></span>
+                                        <span class="checkbox-label">
+                                            <strong>Chapter 4:</strong> Security Operations (16%)
+                                        </span>
+                                    </label>
+                                    
+                                    <label class="checkbox-item">
+                                        <input type="checkbox" id="chapter5" checked>
+                                        <span class="checkmark"></span>
+                                        <span class="checkbox-label">
+                                            <strong>Chapter 5:</strong> Security Program Management (9%)
+                                        </span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="config-item">
+                                <label for="question-types">Question Types</label>
+                                <select id="question-types" class="config-select">
+                                    <option value="all" selected>All Types (Realistic)</option>
+                                    <option value="multiple-choice">Multiple Choice Only</option>
+                                    <option value="scenario">Scenario-Based Only</option>
+                                    <option value="definition">Definition Questions Only</option>
+                                </select>
+                            </div>
+                            
+                            <div class="config-item">
+                                <label for="ai-analysis">AI Analysis</label>
+                                <select id="ai-analysis" class="config-select">
+                                    <option value="off">Off</option>
+                                    <option value="weak-areas" selected>Focus on Weak Areas</option>
+                                    <option value="random">Random Selection</option>
+                                </select>
+                                <small class="config-help">AI will analyze your previous performance to select questions</small>
+                            </div>
+                        </div>
+                        
+                        <div class="config-group">
+                            <h3>Test Experience</h3>
+                            
+                            <div class="config-item">
+                                <label class="checkbox-item">
+                                    <input type="checkbox" id="show-explanations" checked>
+                                    <span class="checkmark"></span>
+                                    <span class="checkbox-label">Show explanations after each question</span>
+                                </label>
+                            </div>
+                            
+                            <div class="config-item">
+                                <label class="checkbox-item">
+                                    <input type="checkbox" id="allow-review">
+                                    <span class="checkmark"></span>
+                                    <span class="checkbox-label">Allow review of previous questions</span>
+                                </label>
+                            </div>
+                            
+                            <div class="config-item">
+                                <label class="checkbox-item">
+                                    <input type="checkbox" id="mark-for-review">
+                                    <span class="checkmark"></span>
+                                    <span class="checkbox-label">Allow marking questions for review</span>
+                                </label>
+                            </div>
+                            
+                            <div class="config-item">
+                                <label class="checkbox-item">
+                                    <input type="checkbox" id="pause-test">
+                                    <span class="checkmark"></span>
+                                    <span class="checkbox-label">Allow pausing the test</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="config-actions">
+                        <button class="btn btn-outline" id="reset-config">
+                            <i class="fas fa-undo"></i>
+                            Reset to Defaults
+                        </button>
+                        <button class="btn btn-primary btn-large" id="start-test">
+                            <i class="fas fa-play"></i>
+                            Start Practice Test
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="test-presets">
+                <h2>Quick Start Presets</h2>
+                <div class="presets-grid">
+                    <div class="preset-card" data-preset="full-exam">
+                        <div class="preset-icon">
+                            <i class="fas fa-graduation-cap"></i>
+                        </div>
+                        <h3>Full Exam Simulation</h3>
+                        <p>80 questions, 90 minutes, all chapters</p>
+                        <div class="preset-details">
+                            <span class="detail-item">90 minutes</span>
+                            <span class="detail-item">All chapters</span>
+                            <span class="detail-item">Realistic timing</span>
+                        </div>
+                        <button class="btn btn-primary">Start Full Exam</button>
+                    </div>
+                    
+                    <div class="preset-card" data-preset="quick-practice">
+                        <div class="preset-icon">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <h3>Quick Practice</h3>
+                        <p>20 questions, 15 minutes, mixed difficulty</p>
+                        <div class="preset-details">
+                            <span class="detail-item">15 minutes</span>
+                            <span class="detail-item">Mixed chapters</span>
+                            <span class="detail-item">Quick review</span>
+                        </div>
+                        <button class="btn btn-primary">Start Quick Practice</button>
+                    </div>
+                    
+                    <div class="preset-card" data-preset="weak-areas">
+                        <div class="preset-icon">
+                            <i class="fas fa-bullseye"></i>
+                        </div>
+                        <h3>Focus on Weak Areas</h3>
+                        <p>AI-selected questions based on your performance</p>
+                        <div class="preset-details">
+                            <span class="detail-item">AI analysis</span>
+                            <span class="detail-item">Targeted practice</span>
+                            <span class="detail-item">Adaptive</span>
+                        </div>
+                        <button class="btn btn-primary">Start Focused Test</button>
+                    </div>
+                    
+                    <div class="preset-card" data-preset="chapter-review">
+                        <div class="preset-icon">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <h3>Chapter Review</h3>
+                        <p>Select specific chapters for focused study</p>
+                        <div class="preset-details">
+                            <span class="detail-item">Chapter selection</span>
+                            <span class="detail-item">Focused study</span>
+                            <span class="detail-item">Customizable</span>
+                        </div>
+                        <button class="btn btn-primary">Start Chapter Review</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const questionCountSelect = document.getElementById('question-count');
+    const customQuestionsDiv = document.getElementById('custom-questions');
+    const customCountInput = document.getElementById('custom-count');
+    const timeLimitSelect = document.getElementById('time-limit');
+    const startTestBtn = document.getElementById('start-test');
+    const resetConfigBtn = document.getElementById('reset-config');
+    const presetCards = document.querySelectorAll('.preset-card');
+    
+    // Handle custom question count
+    questionCountSelect.addEventListener('change', function() {
+        if (this.value === 'custom') {
+            customQuestionsDiv.style.display = 'block';
+        } else {
+            customQuestionsDiv.style.display = 'none';
+            updateTimeLimit();
+        }
+    });
+    
+    // Update time limit based on question count
+    function updateTimeLimit() {
+        const questionCount = questionCountSelect.value;
+        const timePerQuestion = 1.25; // 1:15 per question
+        
+        if (questionCount !== 'custom' && timeLimitSelect.value === 'auto') {
+            const totalMinutes = Math.ceil(questionCount * timePerQuestion);
+            timeLimitSelect.querySelector('option[value="auto"]').textContent = 
+                `Auto (${totalMinutes} minutes)`;
+        }
+    }
+    
+    // Handle custom count input
+    customCountInput.addEventListener('input', function() {
+        if (questionCountSelect.value === 'custom') {
+            updateTimeLimit();
+        }
+    });
+    
+    // Reset configuration
+    resetConfigBtn.addEventListener('click', function() {
+        // Reset all form elements to default values
+        questionCountSelect.value = '80';
+        timeLimitSelect.value = '90';
+        document.getElementById('difficulty').value = 'mixed';
+        document.getElementById('question-types').value = 'all';
+        document.getElementById('ai-analysis').value = 'weak-areas';
+        
+        // Check all chapters
+        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            checkbox.checked = true;
+        });
+        
+        customQuestionsDiv.style.display = 'none';
+        updateTimeLimit();
+    });
+    
+    // Start test
+    startTestBtn.addEventListener('click', function() {
+        const config = getTestConfiguration();
+        startPracticeTest(config);
+    });
+    
+    // Preset cards
+    presetCards.forEach(card => {
+        card.addEventListener('click', function() {
+            const preset = this.dataset.preset;
+            applyPreset(preset);
+        });
+    });
+    
+    function getTestConfiguration() {
+        const questionCount = questionCountSelect.value === 'custom' 
+            ? customCountInput.value 
+            : questionCountSelect.value;
+            
+        const selectedChapters = [];
+        document.querySelectorAll('input[type="checkbox"]:checked').forEach(checkbox => {
+            if (checkbox.id.startsWith('chapter')) {
+                selectedChapters.push(checkbox.id);
+            }
+        });
+        
+        return {
+            questionCount: parseInt(questionCount),
+            timeLimit: timeLimitSelect.value,
+            difficulty: document.getElementById('difficulty').value,
+            questionTypes: document.getElementById('question-types').value,
+            aiAnalysis: document.getElementById('ai-analysis').value,
+            chapters: selectedChapters,
+            showExplanations: document.getElementById('show-explanations').checked,
+            allowReview: document.getElementById('allow-review').checked,
+            markForReview: document.getElementById('mark-for-review').checked,
+            pauseTest: document.getElementById('pause-test').checked
+        };
+    }
+    
+    function applyPreset(preset) {
+        switch(preset) {
+            case 'full-exam':
+                questionCountSelect.value = '80';
+                timeLimitSelect.value = '90';
+                document.getElementById('difficulty').value = 'mixed';
+                document.getElementById('question-types').value = 'all';
+                break;
+            case 'quick-practice':
+                questionCountSelect.value = '20';
+                timeLimitSelect.value = 'auto';
+                document.getElementById('difficulty').value = 'mixed';
+                break;
+            case 'weak-areas':
+                document.getElementById('ai-analysis').value = 'weak-areas';
+                questionCountSelect.value = '40';
+                timeLimitSelect.value = 'auto';
+                break;
+            case 'chapter-review':
+                // Allow user to select chapters
+                break;
+        }
+        updateTimeLimit();
+    }
+    
+    function startPracticeTest(config) {
+        console.log('Starting practice test with config:', config);
+        // This would redirect to the actual test interface
+        // window.location.href = `/test?config=${encodeURIComponent(JSON.stringify(config))}`;
+    }
+    
+    // Initialize
+    updateTimeLimit();
+});
+</script>
+{% endblock %}

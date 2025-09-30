@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}Quizzes & Lessons - Security+ Exam Prep{% endblock %}
+
+{% block content %}
+<div class="quizzes-container">
+    <div class="quizzes-header">
+        <div class="container">
+            <div class="header-content">
+                <div class="breadcrumb">
+                    <a href="{{ url_for('home') }}">Home</a>
+                    <i class="fas fa-chevron-right"></i>
+                    <span>Quizzes & Lessons</span>
+                </div>
+                <h1>Security+ Quizzes & Lessons</h1>
+                <p>Practice with scenario-based questions organized by Professor Messer's study materials</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="quizzes-main">
+        <div class="container">
+            <div class="quiz-header">
+                <h2>Security+ Study Chapters</h2>
+                <p>Select a chapter to start practicing with Professor Messer's study materials</p>
+            </div>
+
+            <div class="chapters-grid">
+                <div class="chapter-card" data-chapter="1">
+                    <div class="chapter-number">1</div>
+                    <div class="chapter-content">
+                        <h3>General Security Concepts</h3>
+                        <p>Security concepts, governance, risk management, compliance, and business continuity</p>
+                        <div class="chapter-stats">
+                            <span class="exam-percentage">24% of exam</span>
+                            <span class="section-count">8 sections</span>
+                            <span class="question-count">45 questions</span>
+                        </div>
+                        <button class="btn btn-primary start-chapter" data-chapter="1">
+                            Start Chapter 1
+                        </button>
+                    </div>
+                </div>
+
+                <div class="chapter-card" data-chapter="2">
+                    <div class="chapter-number">2</div>
+                    <div class="chapter-content">
+                        <h3>Threats, Vulnerabilities & Mitigations</h3>
+                        <p>Threat actors, attack vectors, vulnerabilities, and security controls</p>
+                        <div class="chapter-stats">
+                            <span class="exam-percentage">30% of exam</span>
+                            <span class="section-count">12 sections</span>
+                            <span class="question-count">67 questions</span>
+                        </div>
+                        <button class="btn btn-primary start-chapter" data-chapter="2">
+                            Start Chapter 2
+                        </button>
+                    </div>
+                </div>
+
+                <div class="chapter-card" data-chapter="3">
+                    <div class="chapter-number">3</div>
+                    <div class="chapter-content">
+                        <h3>Security Architecture</h3>
+                        <p>Security models, frameworks, and secure system design</p>
+                        <div class="chapter-stats">
+                            <span class="exam-percentage">21% of exam</span>
+                            <span class="section-count">10 sections</span>
+                            <span class="question-count">52 questions</span>
+                        </div>
+                        <button class="btn btn-primary start-chapter" data-chapter="3">
+                            Start Chapter 3
+                        </button>
+                    </div>
+                </div>
+
+                <div class="chapter-card" data-chapter="4">
+                    <div class="chapter-number">4</div>
+                    <div class="chapter-content">
+                        <h3>Security Operations</h3>
+                        <p>Incident response, monitoring, logging, and security tools</p>
+                        <div class="chapter-stats">
+                            <span class="exam-percentage">16% of exam</span>
+                            <span class="section-count">6 sections</span>
+                            <span class="question-count">38 questions</span>
+                        </div>
+                        <button class="btn btn-primary start-chapter" data-chapter="4">
+                            Start Chapter 4
+                        </button>
+                    </div>
+                </div>
+
+                <div class="chapter-card" data-chapter="5">
+                    <div class="chapter-number">5</div>
+                    <div class="chapter-content">
+                        <h3>Security Program Management</h3>
+                        <p>Security policies, training, awareness, and vendor management</p>
+                        <div class="chapter-stats">
+                            <span class="exam-percentage">9% of exam</span>
+                            <span class="section-count">4 sections</span>
+                            <span class="question-count">18 questions</span>
+                        </div>
+                        <button class="btn btn-primary start-chapter" data-chapter="5">
+                            Start Chapter 5
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="quiz-actions">
+                <button class="btn btn-outline btn-large" id="random-quiz">
+                    <i class="fas fa-random"></i>
+                    Random Quiz (All Chapters)
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chapterCards = document.querySelectorAll('.chapter-card');
+    const startChapterBtns = document.querySelectorAll('.start-chapter');
+    const randomQuizBtn = document.getElementById('random-quiz');
+    let currentChapter = null;
+    
+    // Chapter card selection
+    chapterCards.forEach(card => {
+        card.addEventListener('click', function(e) {
+            // Don't trigger if clicking the button
+            if (e.target.classList.contains('btn')) return;
+            
+            const chapter = parseInt(this.dataset.chapter);
+            startChapterQuiz(chapter);
+        });
+    });
+    
+    // Start chapter buttons
+    startChapterBtns.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation(); // Prevent card click
+            const chapter = parseInt(this.dataset.chapter);
+            startChapterQuiz(chapter);
+        });
+    });
+    
+    // Random quiz button
+    randomQuizBtn.addEventListener('click', function() {
+        startRandomQuiz();
+    });
+    
+    function startChapterQuiz(chapter) {
+        currentChapter = chapter;
+        console.log(`Starting quiz for Chapter ${chapter}`);
+        
+        // Redirect to quiz page with chapter parameter
+        window.location.href = `/quiz/chapter/${chapter}`;
+    }
+    
+    function startRandomQuiz() {
+        console.log('Starting random quiz from all chapters');
+        
+        // Redirect to random quiz page
+        window.location.href = '/quiz/random';
+    }
+    
+});
+</script>
+{% endblock %}

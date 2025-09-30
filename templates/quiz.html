@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block title %}{{ quiz_title }} - Security+ Exam Prep{% endblock %}
+
+{% block content %}
+<div class="quiz-container">
+    <div class="quiz-header">
+        <div class="container">
+            <div class="quiz-header-content">
+                <div class="quiz-breadcrumb">
+                    <a href="{{ url_for('quizzes') }}">Quizzes</a>
+                    <i class="fas fa-chevron-right"></i>
+                    <span>{{ quiz_title }}</span>
+                </div>
+                <h1>{{ quiz_title }}</h1>
+                <div class="quiz-info">
+                    <span class="quiz-type">{{ quiz_type }}</span>
+                    <span class="quiz-difficulty {{ current_question.difficulty.lower() }}">{{ current_question.difficulty }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="quiz-main">
+        <div class="container">
+            <div class="quiz-progress">
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: {{ progress_percentage }}%"></div>
+                </div>
+                <div class="progress-text">
+                    <span class="current-question">{{ current_question_number }}</span>
+                    <span class="separator">of</span>
+                    <span class="total-questions">{{ total_questions }}</span>
+                </div>
+            </div>
+
+            <div class="question-container">
+                <div class="question-header">
+                    <span class="question-type">{{ current_question.question_type.replace('_', ' ').title() }}</span>
+                    <span class="question-difficulty {{ current_question.difficulty.lower() }}">{{ current_question.difficulty }}</span>
+                </div>
+                
+                <div class="question-text">
+                    <h3>{{ current_question.question_text }}</h3>
+                </div>
+                
+                {% if current_question.question_type == 'multiple_choice' %}
+                <div class="question-options">
+                    {% for option in current_question.options %}
+                    <label class="option-item">
+                        <input type="radio" name="answer" value="{{ loop.index0 }}" required>
+                        <span class="option-letter">{{ loop.index0|string|replace('0', 'A')|replace('1', 'B')|replace('2', 'C')|replace('3', 'D') }}</span>
+                        <span class="option-text">{{ option }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+                {% elif current_question.question_type == 'true_false' %}
+                <div class="question-options">
+                    <label class="option-item">
+                        <input type="radio" name="answer" value="true" required>
+                        <span class="option-letter">A</span>
+                        <span class="option-text">True</span>
+                    </label>
+                    <label class="option-item">
+                        <input type="radio" name="answer" value="false" required>
+                        <span class="option-letter">B</span>
+                        <span class="option-text">False</span>
+                    </label>
+                </div>
+                {% elif current_question.question_type == 'fill_in_blank' %}
+                <div class="question-input">
+                    <input type="text" name="answer" placeholder="Enter your answer..." required>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="quiz-actions">
+                <button class="btn btn-outline" id="skipQuestion">
+                    <i class="fas fa-forward"></i>
+                    Skip
+                </button>
+                <button class="btn btn-primary" id="submitAnswer" disabled>
+                    Submit Answer
+                </button>
+            </div>
+
+            <!-- Explanation (shown after answer submission) -->
+            {% if show_explanation %}
+            <div class="explanation-container" id="explanation">
+                <div class="explanation-header">
+                    <h4>
+                        {% if is_correct %}
+                        <i class="fas fa-check-circle correct"></i>
+                        Correct!
+                        {% else %}
+                        <i class="fas fa-times-circle incorrect"></i>
+                        Incorrect
+                        {% endif %}
+                    </h4>
+                </div>
+                <div class="explanation-content">
+                    <p><strong>Your answer:</strong> {{ user_answer }}</p>
+                    <p><strong>Correct answer:</strong> {{ correct_answer }}</p>
+                    <p><strong>Explanation:</strong> {{ current_question.explanation }}</p>
+                </div>
+                <div class="explanation-actions">
+                    <button class="btn btn-primary" id="nextQuestion">
+                        {% if current_question_number < total_questions %}
+                        Next Question
+                        {% else %}
+                        View Results
+                        {% endif %}
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const submitBtn = document.getElementById('submitAnswer');
+    const skipBtn = document.getElementById('skipQuestion');
+    const nextBtn = document.getElementById('nextQuestion');
+    const answerInputs = document.querySelectorAll('input[name="answer"]');
+    const answerText = document.querySelector('input[type="text"]');
+    
+    // Enable submit button when answer is selected
+    function checkAnswerSelected() {
+        let hasAnswer = false;
+        
+        if (answerText) {
+            hasAnswer = answerText.value.trim() !== '';
+        } else {
+            answerInputs.forEach(input => {
+                if (input.checked) hasAnswer = true;
+            });
+        }
+        
+        submitBtn.disabled = !hasAnswer;
+    }
+    
+    // Add event listeners
+    answerInputs.forEach(input => {
+        input.addEventListener('change', checkAnswerSelected);
+    });
+    
+    if (answerText) {
+        answerText.addEventListener('input', checkAnswerSelected);
+    }
+    
+    // Submit answer
+    submitBtn.addEventListener('click', function() {
+        let answer = '';
+        
+        if (answerText) {
+            answer = answerText.value.trim();
+        } else {
+            const selectedInput = document.querySelector('input[name="answer"]:checked');
+            if (selectedInput) {
+                answer = selectedInput.value;
+            }
+        }
+        
+        if (answer) {
+            // Submit the answer
+            submitAnswer(answer);
+        }
+    });
+    
+    // Skip question
+    skipBtn.addEventListener('click', function() {
+        submitAnswer('skip');
+    });
+    
+    // Next question
+    if (nextBtn) {
+        nextBtn.addEventListener('click', function() {
+            window.location.href = '{{ next_question_url }}';
+        });
+    }
+    
+    function submitAnswer(answer) {
+        // Create form data
+        const formData = new FormData();
+        formData.append('answer', answer);
+        
+        // Submit to server
+        fetch('/quiz/{{ quiz_id }}/submit', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (response.ok) {
+                // Redirect to next question or results
+                window.location.href = response.url;
+            } else {
+                throw new Error('Network response was not ok');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error submitting answer. Please try again.');
+        });
+    }
+    
+    // Initialize
+    checkAnswerSelected();
+});
+</script>
+{% endblock %}

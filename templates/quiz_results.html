@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Quiz Results - Security+ Exam Prep{% endblock %}
+
+{% block content %}
+<div class="quiz-results-container">
+    <div class="results-header">
+        <div class="container">
+            <div class="results-header-content">
+                <div class="results-breadcrumb">
+                    <a href="{{ url_for('quizzes') }}">Quizzes</a>
+                    <i class="fas fa-chevron-right"></i>
+                    <span>Quiz Results</span>
+                </div>
+                <h1>Quiz Results</h1>
+                <div class="quiz-info">
+                    <span class="quiz-type">{{ results.quiz_type.replace('_', ' ').title() }}</span>
+                    {% if results.chapter %}
+                    <span class="quiz-chapter">Chapter {{ results.chapter }}</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="results-main">
+        <div class="container">
+            <!-- Score Summary -->
+            <div class="score-summary">
+                <div class="score-circle">
+                    <div class="score-percentage">{{ results.percentage }}%</div>
+                    <div class="score-label">Score</div>
+                </div>
+                <div class="score-details">
+                    <div class="score-item">
+                        <div class="score-number">{{ results.score }}</div>
+                        <div class="score-text">Correct</div>
+                    </div>
+                    <div class="score-item">
+                        <div class="score-number">{{ results.total_questions - results.score }}</div>
+                        <div class="score-text">Incorrect</div>
+                    </div>
+                    <div class="score-item">
+                        <div class="score-number">{{ results.total_questions }}</div>
+                        <div class="score-text">Total</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance Analysis -->
+            <div class="performance-analysis">
+                <h2>Performance Analysis</h2>
+                <div class="analysis-grid">
+                    <div class="analysis-card">
+                        <div class="analysis-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="analysis-content">
+                            <h3>Time Taken</h3>
+                            <p>{{ "%.1f"|format(results.duration_seconds / 60) }} minutes</p>
+                        </div>
+                    </div>
+                    
+                    <div class="analysis-card">
+                        <div class="analysis-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="analysis-content">
+                            <h3>Accuracy Rate</h3>
+                            <p>{{ results.percentage }}%</p>
+                        </div>
+                    </div>
+                    
+                    <div class="analysis-card">
+                        <div class="analysis-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="analysis-content">
+                            <h3>Questions to Review</h3>
+                            <p>{{ results.wrong_questions }} questions</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Wrong Questions Review -->
+            {% if results.wrong_questions > 0 %}
+            <div class="wrong-questions-section">
+                <h2>Questions to Review</h2>
+                <p>Review the questions you answered incorrectly to improve your understanding.</p>
+                
+                <div class="wrong-questions-list">
+                    {% for question in wrong_questions %}
+                    <div class="wrong-question-card">
+                        <div class="question-header">
+                            <span class="question-type">{{ question.question_type.replace('_', ' ').title() }}</span>
+                            <span class="question-difficulty {{ question.difficulty.lower() }}">{{ question.difficulty }}</span>
+                        </div>
+                        
+                        <div class="question-content">
+                            <h4>{{ question.question_text }}</h4>
+                            
+                            <div class="answer-comparison">
+                                <div class="answer-item incorrect">
+                                    <strong>Your Answer:</strong> {{ question.user_answer }}
+                                </div>
+                                <div class="answer-item correct">
+                                    <strong>Correct Answer:</strong> {{ question.correct_answer }}
+                                </div>
+                            </div>
+                            
+                            <div class="explanation">
+                                <strong>Explanation:</strong> {{ question.explanation }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Action Buttons -->
+            <div class="results-actions">
+                <a href="{{ url_for('quizzes') }}" class="btn btn-outline">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Quizzes
+                </a>
+                
+                {% if results.chapter %}
+                <a href="{{ url_for('quiz_chapter', chapter=results.chapter) }}" class="btn btn-primary">
+                    <i class="fas fa-redo"></i>
+                    Retake Chapter {{ results.chapter }}
+                </a>
+                {% else %}
+                <a href="{{ url_for('quiz_random') }}" class="btn btn-primary">
+                    <i class="fas fa-random"></i>
+                    Take Random Quiz
+                </a>
+                {% endif %}
+                
+                <a href="{{ url_for('practice_test') }}" class="btn btn-secondary">
+                    <i class="fas fa-clock"></i>
+                    Practice Test
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

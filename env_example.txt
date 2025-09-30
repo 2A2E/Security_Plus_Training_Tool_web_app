@@ -1,0 +1,23 @@
+# Security+ Training Tool Environment Configuration
+# Copy this file to .env and update the values as needed
+
+# Flask Configuration
+SECRET_KEY=your-secret-key-change-in-production
+FLASK_ENV=development
+FLASK_DEBUG=True
+
+# Supabase Configuration
+SUPABASE_URL=https://mtninpdmcqqvseyhcfho.supabase.co
+SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im10bmlucGRtY3FxdnNleWhjZmhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkxMTY5OTQsImV4cCI6MjA3NDY5Mjk5NH0.nwQB1UTK6ETi6B7ktitP-Eh7cdeDC3xZza2v5cNqUqo
+DATABASE_NAME=security_plus_training
+
+# Email Configuration (for future use)
+MAIL_SERVER=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USE_TLS=True
+MAIL_USERNAME=your-email@gmail.com
+MAIL_PASSWORD=your-app-password
+
+# Application Settings
+APP_NAME=Security Plus Training Tool
+APP_VERSION=1.0.0

@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Contact - Security Plus Training Tool{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div class="container">
+        <h1>Contact Us</h1>
+        <p>Get in touch with our team for support and inquiries</p>
+    </div>
+</section>
+
+<section class="contact-content">
+    <div class="container">
+        <div class="contact-grid">
+            <div class="contact-info">
+                <h2>Get in Touch</h2>
+                <p>Have questions about our training programs? Need technical support? We're here to help!</p>
+                
+                <div class="contact-methods">
+                    <div class="contact-method">
+                        <div class="method-icon">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <div class="method-details">
+                            <h3>Email Us</h3>
+                            <p>info@securityplus.com</p>
+                            <p>support@securityplus.com</p>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-method">
+                        <div class="method-icon">
+                            <i class="fas fa-phone"></i>
+                        </div>
+                        <div class="method-details">
+                            <h3>Call Us</h3>
+                            <p>+1 (555) 123-4567</p>
+                            <p>Mon-Fri 9AM-6PM EST</p>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-method">
+                        <div class="method-icon">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <div class="method-details">
+                            <h3>Visit Us</h3>
+                            <p>123 Security Street</p>
+                            <p>Cybersecurity City, CC 12345</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="contact-form">
+                <h2>Send us a Message</h2>
+                <form class="form" method="POST" action="{{ url_for('contact') }}">
+                    <div class="form-group">
+                        <label for="name">Full Name</label>
+                        <input type="text" id="name" name="name" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="subject">Subject</label>
+                        <select id="subject" name="subject" required>
+                            <option value="">Select a subject</option>
+                            <option value="general">General Inquiry</option>
+                            <option value="support">Technical Support</option>
+                            <option value="training">Training Information</option>
+                            <option value="billing">Billing Question</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="message">Message</label>
+                        <textarea id="message" name="message" rows="5" required></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-large">Send Message</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="faq">
+    <div class="container">
+        <h2>Frequently Asked Questions</h2>
+        <div class="faq-grid">
+            <div class="faq-item">
+                <h3>How long does it take to complete a training module?</h3>
+                <p>Training modules vary in length from 2-40 hours depending on the complexity and certification level. Each module includes interactive content, hands-on exercises, and assessments.</p>
+            </div>
+            
+            <div class="faq-item">
+                <h3>Do you provide certificates upon completion?</h3>
+                <p>Yes! We provide certificates of completion for all training modules. For certification preparation courses, we also offer exam vouchers and additional study materials.</p>
+            </div>
+            
+            <div class="faq-item">
+                <h3>Is there technical support available?</h3>
+                <p>Absolutely! Our technical support team is available 24/7 to help with any issues or questions you may have during your training.</p>
+            </div>
+            
+            <div class="faq-item">
+                <h3>Can I access training materials offline?</h3>
+                <p>Yes, many of our training materials can be downloaded for offline access. This includes PDFs, videos, and interactive exercises.</p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

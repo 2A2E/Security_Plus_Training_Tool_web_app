@@ -1,0 +1,65 @@
+<nav class="navbar">
+    <div class="nav-container">
+        <div class="nav-logo">
+            <a href="{{ url_for('main.index') }}">
+                <i class="fas fa-shield-alt"></i>
+                Security Plus Training
+            </a>
+        </div>
+        <ul class="nav-menu">
+            <li class="nav-item dropdown">
+                <a href="#" class="nav-link dropdown-toggle">
+                    Explore <i class="fas fa-chevron-down"></i>
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a href="{{ url_for('main.index') }}">Home</a></li>
+                    <li><a href="{{ url_for('main.about') }}">About</a></li>
+                    <li><a href="{{ url_for('training.index') }}">Training</a></li>
+                    <li><a href="{{ url_for('main.contact') }}">Contact</a></li>
+                </ul>
+            </li>
+            <li class="nav-item dropdown">
+                <a href="#" class="nav-link dropdown-toggle">
+                    Training <i class="fas fa-chevron-down"></i>
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a href="{{ url_for('training.beginner') }}">Beginner Level</a></li>
+                    <li><a href="{{ url_for('training.intermediate') }}">Intermediate Level</a></li>
+                    <li><a href="{{ url_for('training.advanced') }}">Advanced Level</a></li>
+                    <li><a href="{{ url_for('training.certification') }}">Certification Prep</a></li>
+                </ul>
+            </li>
+            <li class="nav-item dropdown">
+                <a href="#" class="nav-link dropdown-toggle">
+                    Resources <i class="fas fa-chevron-down"></i>
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a href="{{ url_for('main.about') }}">About Us</a></li>
+                    <li><a href="{{ url_for('main.contact') }}#faq">FAQ</a></li>
+                    <li><a href="{{ url_for('main.contact') }}">Support</a></li>
+                    <li><a href="#" onclick="showComingSoon()">Study Guides</a></li>
+                </ul>
+            </li>
+            <li class="nav-item dropdown">
+                <a href="#" class="nav-link dropdown-toggle">
+                    Account <i class="fas fa-chevron-down"></i>
+                </a>
+                <ul class="dropdown-menu">
+                    {% if session.logged_in %}
+                        <li><a href="{{ url_for('training.progress') }}">Dashboard</a></li>
+                        <li><a href="#" onclick="showComingSoon()">Profile</a></li>
+                        <li><a href="{{ url_for('auth.logout') }}">Logout</a></li>
+                    {% else %}
+                        <li><a href="{{ url_for('auth.login') }}">Login</a></li>
+                        <li><a href="{{ url_for('auth.register') }}">Register</a></li>
+                    {% endif %}
+                </ul>
+            </li>
+        </ul>
+        <div class="hamburger">
+            <span class="bar"></span>
+            <span class="bar"></span>
+            <span class="bar"></span>
+        </div>
+    </div>
+</nav>

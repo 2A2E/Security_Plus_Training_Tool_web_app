@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Security Plus Training Tool{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div class="hero-content">
+        <h1>Welcome to Security Plus Training Tool</h1>
+        <p>Master cybersecurity fundamentals and advance your career with our comprehensive training platform.</p>
+        <div class="hero-buttons">
+            <a href="{{ url_for('training.index') }}" class="btn btn-primary">Start Training</a>
+            <a href="{{ url_for('main.about') }}" class="btn btn-secondary">Learn More</a>
+        </div>
+    </div>
+    <div class="hero-image">
+        <i class="fas fa-lock hero-icon"></i>
+    </div>
+</section>
+
+<section class="features">
+    <div class="container">
+        <h2>Why Choose Our Training Platform?</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <h3>Comprehensive Curriculum</h3>
+                <p>Cover all essential security concepts from basics to advanced topics with structured learning paths.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h3>Progress Tracking</h3>
+                <p>Monitor your learning journey with detailed progress reports and performance analytics.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h3>Expert Instructors</h3>
+                <p>Learn from industry professionals with years of experience in cybersecurity and training.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-certificate"></i>
+                </div>
+                <h3>Certification Ready</h3>
+                <p>Prepare for industry-standard certifications with our focused exam preparation modules.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="stats">
+    <div class="container">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-number">1000+</div>
+                <div class="stat-label">Students Trained</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">95%</div>
+                <div class="stat-label">Success Rate</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">50+</div>
+                <div class="stat-label">Training Modules</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">24/7</div>
+                <div class="stat-label">Support Available</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="cta">
+    <div class="container">
+        <div class="cta-content">
+            <h2>Ready to Start Your Cybersecurity Journey?</h2>
+            <p>Join thousands of professionals who have enhanced their skills with our training platform.</p>
+            <a href="{{ url_for('training.index') }}" class="btn btn-primary btn-large">Get Started Now</a>
+        </div>
+    </div>
+</section>
+{% endblock %}

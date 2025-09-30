@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}Security+ Exam Prep - CompTIA Security+ SY0-701{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div class="hero-content">
+        <div class="hero-badge">
+            <i class="fas fa-shield-alt"></i>
+            <span>CompTIA Security+ SY0-701</span>
+        </div>
+        <h1>Security+ Exam Prep</h1>
+        <p>Master the CompTIA Security+ certification with comprehensive flashcards, practice quizzes, and timed practice tests. Based on Professor Messer's study materials.</p>
+        <div class="hero-buttons">
+            <a href="{{ url_for('flashcards') }}" class="btn btn-primary">
+                <i class="fas fa-layer-group"></i>
+                Start Flashcards
+            </a>
+            <a href="{{ url_for('quizzes') }}" class="btn btn-secondary">
+                <i class="fas fa-question-circle"></i>
+                Take Quiz
+            </a>
+            <a href="{{ url_for('practice_test') }}" class="btn btn-outline">
+                <i class="fas fa-clock"></i>
+                Practice Test
+            </a>
+        </div>
+    </div>
+    <div class="hero-image">
+        <div class="exam-stats">
+            <div class="stat-card">
+                <div class="stat-number">90</div>
+                <div class="stat-label">Minutes</div>
+                <div class="stat-desc">Exam Duration</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">80</div>
+                <div class="stat-label">Questions</div>
+                <div class="stat-desc">Multiple Choice</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">750</div>
+                <div class="stat-label">Score</div>
+                <div class="stat-desc">Passing Grade</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="study-modes">
+    <div class="container">
+        <h2>Study Modes</h2>
+        <div class="modes-grid">
+            <div class="mode-card" onclick="location.href='{{ url_for('flashcards') }}'">
+                <div class="mode-icon">
+                    <i class="fas fa-layer-group"></i>
+                </div>
+                <h3>Flashcards</h3>
+                <p>Memorize key terms and concepts with interactive flashcards organized by Security+ domains.</p>
+                <div class="mode-features">
+                    <span class="feature-tag">Acronyms</span>
+                    <span class="feature-tag">Attacks</span>
+                    <span class="feature-tag">Cryptography</span>
+                    <span class="feature-tag">Networking</span>
+                </div>
+                <div class="mode-action">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+            </div>
+            
+            <div class="mode-card" onclick="location.href='{{ url_for('quizzes') }}'">
+                <div class="mode-icon">
+                    <i class="fas fa-question-circle"></i>
+                </div>
+                <h3>Quizzes & Lessons</h3>
+                <p>Practice with scenario-based questions organized by Professor Messer's 5 chapters and sections.</p>
+                <div class="mode-features">
+                    <span class="feature-tag">Multiple Choice</span>
+                    <span class="feature-tag">Select All</span>
+                    <span class="feature-tag">Scenarios</span>
+                    <span class="feature-tag">Explanations</span>
+                </div>
+                <div class="mode-action">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+            </div>
+            
+            <div class="mode-card" onclick="location.href='{{ url_for('practice_test') }}'">
+                <div class="mode-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <h3>Practice Tests</h3>
+                <p>Simulate the real exam with configurable practice tests including time limits and section selection.</p>
+                <div class="mode-features">
+                    <span class="feature-tag">Timed</span>
+                    <span class="feature-tag">Configurable</span>
+                    <span class="feature-tag">Realistic</span>
+                    <span class="feature-tag">AI Analysis</span>
+                </div>
+                <div class="mode-action">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="security-domains">
+    <div class="container">
+        <h2>Security+ Domains</h2>
+        <div class="domains-grid">
+            <div class="domain-card">
+                <div class="domain-number">1</div>
+                <h3>General Security Concepts</h3>
+                <p>Security concepts, governance, risk management, compliance, and business continuity</p>
+                <div class="domain-stats">
+                    <span>24% of exam</span>
+                </div>
+            </div>
+            <div class="domain-card">
+                <div class="domain-number">2</div>
+                <h3>Threats, Vulnerabilities & Mitigations</h3>
+                <p>Threat actors, attack vectors, vulnerabilities, and security controls</p>
+                <div class="domain-stats">
+                    <span>30% of exam</span>
+                </div>
+            </div>
+            <div class="domain-card">
+                <div class="domain-number">3</div>
+                <h3>Security Architecture</h3>
+                <p>Security models, frameworks, and secure system design</p>
+                <div class="domain-stats">
+                    <span>21% of exam</span>
+                </div>
+            </div>
+            <div class="domain-card">
+                <div class="domain-number">4</div>
+                <h3>Security Operations</h3>
+                <p>Incident response, monitoring, logging, and security tools</p>
+                <div class="domain-stats">
+                    <span>16% of exam</span>
+                </div>
+            </div>
+            <div class="domain-card">
+                <div class="domain-number">5</div>
+                <h3>Security Program Management</h3>
+                <p>Security policies, training, awareness, and vendor management</p>
+                <div class="domain-stats">
+                    <span>9% of exam</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="quick-start">
+    <div class="container">
+        <div class="quick-start-content">
+            <h2>Ready to Pass Security+?</h2>
+            <p>Start with flashcards to build your foundation, then move to practice quizzes and timed tests.</p>
+            <div class="quick-actions">
+                <a href="{{ url_for('flashcards') }}" class="btn btn-primary btn-large">
+                    <i class="fas fa-layer-group"></i>
+                    Start with Flashcards
+                </a>
+                <a href="{{ url_for('about') }}" class="btn btn-outline">
+                    <i class="fas fa-info-circle"></i>
+                    Learn More
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,46 @@
+<footer class="footer">
+    <div class="footer-content">
+        <div class="footer-section">
+            <h3>Security Plus Training Tool</h3>
+            <p>Enhance your cybersecurity knowledge with comprehensive training modules.</p>
+            <div class="social-links">
+                <a href="#" onclick="showComingSoon()"><i class="fab fa-facebook"></i></a>
+                <a href="#" onclick="showComingSoon()"><i class="fab fa-twitter"></i></a>
+                <a href="#" onclick="showComingSoon()"><i class="fab fa-linkedin"></i></a>
+                <a href="#" onclick="showComingSoon()"><i class="fab fa-github"></i></a>
+            </div>
+        </div>
+        <div class="footer-section">
+            <h4>Quick Links</h4>
+            <ul>
+                <li><a href="{{ url_for('main.index') }}">Home</a></li>
+                <li><a href="{{ url_for('main.about') }}">About</a></li>
+                <li><a href="{{ url_for('training.index') }}">Training</a></li>
+                <li><a href="{{ url_for('main.contact') }}">Contact</a></li>
+            </ul>
+        </div>
+        <div class="footer-section">
+            <h4>Training</h4>
+            <ul>
+                <li><a href="{{ url_for('training.beginner') }}">Beginner</a></li>
+                <li><a href="{{ url_for('training.intermediate') }}">Intermediate</a></li>
+                <li><a href="{{ url_for('training.advanced') }}">Advanced</a></li>
+                <li><a href="{{ url_for('training.certification') }}">Certification</a></li>
+            </ul>
+        </div>
+        <div class="footer-section">
+            <h4>Contact Info</h4>
+            <p><i class="fas fa-envelope"></i> info@securityplus.com</p>
+            <p><i class="fas fa-phone"></i> +1 (555) 123-4567</p>
+            <p><i class="fas fa-map-marker-alt"></i> 123 Security Street, Cybersecurity City</p>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <p>&copy; 2024 Security Plus Training Tool. All rights reserved.</p>
+        <div class="footer-links">
+            <a href="#" onclick="showComingSoon()">Privacy Policy</a>
+            <a href="#" onclick="showComingSoon()">Terms of Service</a>
+            <a href="#" onclick="showComingSoon()">Cookie Policy</a>
+        </div>
+    </div>
+</footer>

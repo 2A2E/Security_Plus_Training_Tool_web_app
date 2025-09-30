@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}Training - Security Plus Training Tool{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div class="container">
+        <h1>Training Modules</h1>
+        <p>Comprehensive cybersecurity training for all skill levels</p>
+    </div>
+</section>
+
+<section class="training-content">
+    <div class="container">
+        <div class="training-categories">
+            <div class="category-tabs">
+                <button class="tab-button active" data-category="beginner">Beginner</button>
+                <button class="tab-button" data-category="intermediate">Intermediate</button>
+                <button class="tab-button" data-category="advanced">Advanced</button>
+                <button class="tab-button" data-category="certification">Certification</button>
+            </div>
+            
+            <div class="training-modules">
+                <div class="module-category" id="beginner">
+                    <h2>Beginner Level Training</h2>
+                    <div class="modules-grid">
+                        <div class="module-card">
+                            <div class="module-icon">
+                                <i class="fas fa-lock"></i>
+                            </div>
+                            <h3>Introduction to Cybersecurity</h3>
+                            <p>Learn the fundamentals of cybersecurity, including basic concepts, terminology, and best practices.</p>
+                            <div class="module-meta">
+                                <span class="duration"><i class="fas fa-clock"></i> 4 hours</span>
+                                <span class="level"><i class="fas fa-star"></i> Beginner</span>
+                            </div>
+                            <a href="{{ url_for('training.module_detail', module_id='intro-cybersecurity') }}" class="btn btn-primary">Start Module</a>
+                        </div>
+                        
+                        <div class="module-card">
+                            <div class="module-icon">
+                                <i class="fas fa-user-shield"></i>
+                            </div>
+                            <h3>Security Awareness</h3>
+                            <p>Develop essential security awareness skills to protect yourself and your organization.</p>
+                            <div class="module-meta">
+                                <span class="duration"><i class="fas fa-clock"></i> 3 hours</span>
+                                <span class="level"><i class="fas fa-star"></i> Beginner</span>
+                            </div>
+                            <a href="{{ url_for('training.module_detail', module_id='security-awareness') }}" class="btn btn-primary">Start Module</a>
+                        </div>
+                        
+                        <div class="module-card">
+                            <div class="module-icon">
+                                <i class="fas fa-key"></i>
+                            </div>
+                            <h3>Password Security</h3>
+                            <p>Master password management, creation, and protection strategies.</p>
+                            <div class="module-meta">
+                                <span class="duration"><i class="fas fa-clock"></i> 2 hours</span>
+                                <span class="level"><i class="fas fa-star"></i> Beginner</span>
+                            </div>
+                            <a href="{{ url_for('training.module_detail', module_id='password-security') }}" class="btn btn-primary">Start Module</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="module-category" id="intermediate" style="display: none;">
+                    <h2>Intermediate Level Training</h2>
+                    <div class="modules-grid">
+                        <div class="module-card">
+                            <div class="module-icon">
+                                <i class="fas fa-network-wired"></i>
+                            </div>
+                            <h3>Network Security</h3>
+                            <p>Explore network security protocols, firewalls, and intrusion detection systems.</p>
+                            <div class="module-meta">
+                                <span class="duration"><i class="fas fa-clock"></i> 6 hours</span>
+                                <span class="level"><i class="fas fa-star"></i> Intermediate</span>
+                            </div>
+                            <a href="{{ url_for('training.module_detail', module_id='network-security') }}" class="btn btn-primary">Start Module</a>
+                        </div>
+                        
+                        <div class="module-card">
+                            <div class="module-icon">
+                                <i class="fas fa-bug"></i>
+                            </div>
+                            <h3>Vulnerability Assessment</h3>
+                            <p>Learn to identify, assess, and remediate security vulnerabilities.</p>
+                            <div class="module-meta">
+                                <span class="duration"><i class="fas fa-clock"></i> 8 hours</span>
+                                <span class="level"><i class="fas fa-star"></i> Intermediate</span>
+                            </div>
+                            <a href="{{ url_for('training.module_detail', module_id='vulnerability-assessment') }}" class="btn btn-primary">Start Module</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="module-category" id="advanced" style="display: none;">
+                    <h2>Advanced Level Training</h2>
+                    <div class="modules-grid">
+                        <div class="module-card">
+                            <div class="module-icon">
+                                <i class="fas fa-skull-crossbones"></i>
+                            </div>
+                            <h3>Penetration Testing</h3>
+                            <p>Advanced techniques for ethical hacking and penetration testing.</p>
+                            <div class="module-meta">
+                                <span class="duration"><i class="fas fa-clock"></i> 12 hours</span>
+                                <span class="level"><i class="fas fa-star"></i> Advanced</span>
+                            </div>
+                            <a href="{{ url_for('training.module_detail', module_id='penetration-testing') }}" class="btn btn-primary">Start Module</a>
+                        </div>
+                        
+                        <div class="module-card">
+                            <div class="module-icon">
+                                <i class="fas fa-shield-virus"></i>
+                            </div>
+                            <h3>Malware Analysis</h3>
+                            <p>Deep dive into malware behavior, analysis techniques, and reverse engineering.</p>
+                            <div class="module-meta">
+                                <span class="duration"><i class="fas fa-clock"></i> 10 hours</span>
+                                <span class="level"><i class="fas fa-star"></i> Advanced</span>
+                            </div>
+                            <a href="{{ url_for('training.module_detail', module_id='malware-analysis') }}" class="btn btn-primary">Start Module</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="module-category" id="certification" style="display: none;">
+                    <h2>Certification Preparation</h2>
+                    <div class="modules-grid">
+                        <div class="module-card">
+                            <div class="module-icon">
+                                <i class="fas fa-certificate"></i>
+                            </div>
+                            <h3>Security+ Exam Prep</h3>
+                            <p>Comprehensive preparation for CompTIA Security+ certification exam.</p>
+                            <div class="module-meta">
+                                <span class="duration"><i class="fas fa-clock"></i> 20 hours</span>
+                                <span class="level"><i class="fas fa-certificate"></i> Certification</span>
+                            </div>
+                            <a href="{{ url_for('training.module_detail', module_id='security-plus-prep') }}" class="btn btn-primary">Start Module</a>
+                        </div>
+                        
+                        <div class="module-card">
+                            <div class="module-icon">
+                                <i class="fas fa-medal"></i>
+                            </div>
+                            <h3>CISSP Exam Prep</h3>
+                            <p>Advanced preparation for Certified Information Systems Security Professional exam.</p>
+                            <div class="module-meta">
+                                <span class="duration"><i class="fas fa-clock"></i> 40 hours</span>
+                                <span class="level"><i class="fas fa-certificate"></i> Certification</span>
+                            </div>
+                            <a href="{{ url_for('training.module_detail', module_id='cissp-prep') }}" class="btn btn-primary">Start Module</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

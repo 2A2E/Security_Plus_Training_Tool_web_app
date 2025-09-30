@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}Register - Security Plus Training Tool{% endblock %}
+
+{% block additional_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div class="container">
+        <h1>Create Your Account</h1>
+        <p>Join thousands of cybersecurity professionals and start your training journey</p>
+    </div>
+</section>
+
+<section class="auth-content">
+    <div class="container">
+        <div class="auth-container">
+            <div class="auth-card">
+                <div class="auth-header">
+                    <h2>Get Started Today</h2>
+                    <p>Create your account and begin your cybersecurity training</p>
+                </div>
+                
+                <form class="auth-form" method="POST" action="{{ url_for('auth.register') }}">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="first_name">First Name</label>
+                            <input type="text" id="first_name" name="first_name" required>
+                            <i class="fas fa-user form-icon"></i>
+                        </div>
+                        <div class="form-group">
+                            <label for="last_name">Last Name</label>
+                            <input type="text" id="last_name" name="last_name" required>
+                            <i class="fas fa-user form-icon"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" name="email" required>
+                        <i class="fas fa-envelope form-icon"></i>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" required>
+                        <i class="fas fa-lock form-icon"></i>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="confirm_password">Confirm Password</label>
+                        <input type="password" id="confirm_password" name="confirm_password" required>
+                        <i class="fas fa-lock form-icon"></i>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="experience_level">Experience Level</label>
+                        <select id="experience_level" name="experience_level" required>
+                            <option value="">Select your experience level</option>
+                            <option value="beginner">Beginner (0-1 years)</option>
+                            <option value="intermediate">Intermediate (1-3 years)</option>
+                            <option value="advanced">Advanced (3+ years)</option>
+                            <option value="expert">Expert (5+ years)</option>
+                        </select>
+                        <i class="fas fa-chart-line form-icon"></i>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="interests">Areas of Interest</label>
+                        <select id="interests" name="interests" required>
+                            <option value="">Select your primary interest</option>
+                            <option value="network_security">Network Security</option>
+                            <option value="penetration_testing">Penetration Testing</option>
+                            <option value="incident_response">Incident Response</option>
+                            <option value="risk_management">Risk Management</option>
+                            <option value="compliance">Compliance</option>
+                            <option value="general">General Cybersecurity</option>
+                        </select>
+                        <i class="fas fa-shield-alt form-icon"></i>
+                    </div>
+                    
+                    <div class="form-options">
+                        <label class="checkbox-container">
+                            <input type="checkbox" name="terms" required>
+                            <span class="checkmark"></span>
+                            I agree to the <a href="#" onclick="showComingSoon()">Terms of Service</a> and <a href="#" onclick="showComingSoon()">Privacy Policy</a>
+                        </label>
+                    </div>
+                    
+                    <div class="form-options">
+                        <label class="checkbox-container">
+                            <input type="checkbox" name="newsletter">
+                            <span class="checkmark"></span>
+                            Subscribe to our newsletter for updates and tips
+                        </label>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-large auth-btn">Create Account</button>
+                </form>
+                
+                <div class="auth-divider">
+                    <span>or</span>
+                </div>
+                
+                <div class="social-login">
+                    <button class="btn btn-social btn-google" onclick="showComingSoon()">
+                        <i class="fab fa-google"></i>
+                        Sign up with Google
+                    </button>
+                    <button class="btn btn-social btn-microsoft" onclick="showComingSoon()">
+                        <i class="fab fa-microsoft"></i>
+                        Sign up with Microsoft
+                    </button>
+                </div>
+                
+                <div class="auth-footer">
+                    <p>Already have an account? <a href="{{ url_for('auth.login') }}">Sign in here</a></p>
+                </div>
+            </div>
+            
+            <div class="auth-features">
+                <h3>What You'll Get</h3>
+                <div class="feature-list">
+                    <div class="feature-item">
+                        <i class="fas fa-graduation-cap"></i>
+                        <div>
+                            <h4>Free Training</h4>
+                            <p>Access to all beginner-level training modules</p>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-chart-line"></i>
+                        <div>
+                            <h4>Progress Tracking</h4>
+                            <p>Detailed analytics of your learning progress</p>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-certificate"></i>
+                        <div>
+                            <h4>Certificates</h4>
+                            <p>Earn certificates upon completing modules</p>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-headset"></i>
+                        <div>
+                            <h4>24/7 Support</h4>
+                            <p>Get help whenever you need it</p>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-users"></i>
+                        <div>
+                            <h4>Community Access</h4>
+                            <p>Join our community of cybersecurity professionals</p>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-mobile-alt"></i>
+                        <div>
+                            <h4>Mobile Learning</h4>
+                            <p>Learn on the go with our mobile-friendly platform</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
