@@ -54,22 +54,49 @@ jobs:
     - name: Deploy to production
       run: |
         echo "🚀 Deploying to production..."
+        echo "🔍 Debug: Starting deployment process..."
+        
+        # Check if secrets are available
+        echo "🔍 Debug: Checking secrets..."
+        if [ -z "${{ secrets.SERVER_HOST }}" ]; then
+          echo "❌ SERVER_HOST secret is missing!"
+          exit 1
+        fi
+        if [ -z "${{ secrets.SERVER_USER }}" ]; then
+          echo "❌ SERVER_USER secret is missing!"
+          exit 1
+        fi
+        if [ -z "${{ secrets.SERVER_PATH }}" ]; then
+          echo "❌ SERVER_PATH secret is missing!"
+          exit 1
+        fi
+        if [ -z "${{ secrets.SERVER_SSH_KEY }}" ]; then
+          echo "❌ SERVER_SSH_KEY secret is missing!"
+          exit 1
+        fi
+        echo "✅ All secrets are available"
         
         # Install SSH key for server access
+        echo "🔍 Debug: Setting up SSH key..."
         mkdir -p ~/.ssh
         echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
+        echo "✅ SSH key installed"
         
         # Add server to known hosts
+        echo "🔍 Debug: Adding server to known hosts..."
         ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+        echo "✅ Server added to known hosts"
         
         # Test SSH connection first
         echo "🔗 Testing SSH connection..."
         ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "echo 'SSH connection successful'"
+        echo "✅ SSH connection successful"
         
         # Deploy to your server
         echo "📦 Uploading files to server..."
         rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa" ./ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PATH }}/
+        echo "✅ Files uploaded successfully"
         
         echo "🔄 Restarting application on server..."
         ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
