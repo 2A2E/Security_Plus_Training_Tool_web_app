@@ -71,8 +71,8 @@ jobs:
         ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
           cd ${{ secrets.SERVER_PATH }}
           pip install -r requirements.txt
-          sudo systemctl restart security-plus-app
-          sudo systemctl status security-plus-app
+          sudo systemctl restart securityplus
+          sudo systemctl status securityplus
         EOF
         
         echo "✅ Deployment completed successfully!"
