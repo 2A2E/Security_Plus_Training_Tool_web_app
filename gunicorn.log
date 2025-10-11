@@ -1,0 +1,24 @@
+nohup: ignoring input
+[2025-10-07 20:04:01 +0000] [73806] [INFO] Starting gunicorn 21.2.0
+[2025-10-07 20:04:01 +0000] [73806] [INFO] Listening at: http://127.0.0.1:5000 (73806)
+[2025-10-07 20:04:01 +0000] [73806] [INFO] Using worker: sync
+[2025-10-07 20:04:01 +0000] [73808] [INFO] Booting worker with pid: 73808
+[2025-10-07 20:04:01 +0000] [73809] [INFO] Booting worker with pid: 73809
+[2025-10-07 20:04:01 +0000] [73810] [INFO] Booting worker with pid: 73810
+INFO:httpx:HTTP Request: GET https://mtninpdmcqqvseyhcfho.supabase.co/rest/v1/questions?select=id&limit=1 "HTTP/2 200 OK"
+INFO:database.connection:Successfully connected to Supabase database: security_plus_training
+INFO:database.question_manager:QuestionManager initialized with Supabase
+INFO:httpx:HTTP Request: GET https://mtninpdmcqqvseyhcfho.supabase.co/rest/v1/questions?select=id&limit=1 "HTTP/2 200 OK"
+INFO:httpx:HTTP Request: GET https://mtninpdmcqqvseyhcfho.supabase.co/rest/v1/questions?select=id&limit=1 "HTTP/2 200 OK"
+INFO:database.connection:Successfully connected to Supabase database: security_plus_training
+INFO:database.question_manager:QuestionManager initialized with Supabase
+INFO:database.connection:Successfully connected to Supabase database: security_plus_training
+INFO:database.question_manager:QuestionManager initialized with Supabase
+[2025-10-07 20:05:55 +0000] [73808] [INFO] Worker exiting (pid: 73808)
+[2025-10-07 20:05:55 +0000] [73806] [INFO] Handling signal: term
+[2025-10-07 20:05:55 +0000] [73810] [INFO] Worker exiting (pid: 73810)
+[2025-10-07 20:05:55 +0000] [73806] [ERROR] Worker (pid:73808) was sent SIGTERM!
+[2025-10-07 20:05:55 +0000] [73809] [INFO] Worker exiting (pid: 73809)
+[2025-10-07 20:05:55 +0000] [73806] [ERROR] Worker (pid:73809) was sent SIGTERM!
+[2025-10-07 20:05:55 +0000] [73806] [ERROR] Worker (pid:73810) was sent SIGTERM!
+[2025-10-07 20:05:55 +0000] [73806] [INFO] Shutting down: Master
