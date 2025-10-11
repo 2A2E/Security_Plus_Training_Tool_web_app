@@ -15,7 +15,7 @@ python-dotenv==1.0.0
 
 # Database - Supabase (PostgreSQL)
 supabase==2.21.1
-supabase-auth==2.12.4
+supabase-auth==2.21.1
 supabase-functions==2.21.1
 psycopg2-binary==2.9.7
 
