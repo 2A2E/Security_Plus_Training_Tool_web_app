@@ -83,23 +83,29 @@ jobs:
         chmod 600 ~/.ssh/id_rsa
         echo "✅ SSH key installed"
         
-        # Add server to known hosts
-        echo "🔍 Debug: Adding server to known hosts..."
-        ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
-        echo "✅ Server added to known hosts"
+        # Skip known hosts (we'll use StrictHostKeyChecking=no)
+        echo "🔍 Debug: Skipping known hosts setup (using StrictHostKeyChecking=no)"
         
         # Test SSH connection first
         echo "🔗 Testing SSH connection..."
-        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "echo 'SSH connection successful'"
-        echo "✅ SSH connection successful"
+        if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -i ~/.ssh/id_rsa ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "echo 'SSH connection successful'"; then
+          echo "✅ SSH connection successful"
+        else
+          echo "❌ SSH connection failed!"
+          exit 1
+        fi
         
         # Deploy to your server
         echo "📦 Uploading files to server..."
-        rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa" ./ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PATH }}/
-        echo "✅ Files uploaded successfully"
+        if rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa" ./ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PATH }}/; then
+          echo "✅ Files uploaded successfully"
+        else
+          echo "❌ File upload failed!"
+          exit 1
+        fi
         
         echo "🔄 Restarting application on server..."
-        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+        if ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
           cd ${{ secrets.SERVER_PATH }}
           echo "Current directory: $(pwd)"
           echo "Installing dependencies..."
@@ -109,5 +115,11 @@ jobs:
           echo "Checking service status..."
           sudo systemctl status securityplus --no-pager
         EOF
+        then
+          echo "✅ Application restarted successfully"
+        else
+          echo "❌ Application restart failed!"
+          exit 1
+        fi
         
         echo "✅ Deployment completed successfully!"
