@@ -54,5 +54,25 @@ jobs:
     - name: Deploy to production
       run: |
         echo "🚀 Deploying to production..."
-        echo "Add your deployment commands here"
-        # Example: scp files to server, run deployment scripts, etc.
+        
+        # Install SSH key for server access
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        
+        # Add server to known hosts
+        ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+        
+        # Deploy to your server
+        echo "📦 Uploading files to server..."
+        rsync -avz --delete ./ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PATH }}/
+        
+        echo "🔄 Restarting application on server..."
+        ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+          cd ${{ secrets.SERVER_PATH }}
+          pip install -r requirements.txt
+          sudo systemctl restart security-plus-app
+          sudo systemctl status security-plus-app
+        EOF
+        
+        echo "✅ Deployment completed successfully!"
