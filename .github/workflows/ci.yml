@@ -34,6 +34,10 @@ jobs:
     needs: test
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    concurrency:
+      group: deploy-${{ github.ref }}
+      cancel-in-progress: true
     env:
       # Expose secrets as environment variables once (safe, standard pattern)
       SERVER_HOST: ${{ secrets.SERVER_HOST }}
@@ -54,23 +58,20 @@ jobs:
           : "${SERVER_SSH_KEY:?Missing SERVER_SSH_KEY secret}"
           echo "✅ Secrets present"
 
-      - name: SSH setup (key + known_hosts)
+      - name: SSH setup (private key)
         shell: bash
         run: |
           mkdir -p ~/.ssh && chmod 700 ~/.ssh
-          echo "$SERVER_SSH_KEY" > ~/.ssh/id_rsa
+          printf '%s\n' "$SERVER_SSH_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          PORT_OPTS=""
-          if [ -n "$SERVER_PORT" ]; then PORT_OPTS="-p $SERVER_PORT"; fi
-          ssh-keyscan $PORT_OPTS -H "$SERVER_HOST" >> ~/.ssh/known_hosts
 
       - name: Sync project to server (rsync)
         shell: bash
         run: |
-          SSH_CMD="ssh -o BatchMode=yes -i ~/.ssh/id_rsa"
-          if [ -n "$SERVER_PORT" ]; then SSH_CMD="$SSH_CMD -p $SERVER_PORT"; fi
+          SSH_OPTS="-o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=20 -o ServerAliveCountMax=3 -o ConnectTimeout=15 -i ~/.ssh/id_rsa"
+          if [ -n "$SERVER_PORT" ]; then SSH_OPTS="$SSH_OPTS -p $SERVER_PORT"; fi
 
-          $SSH_CMD "$SERVER_USER@$SERVER_HOST" "mkdir -p '$SERVER_PATH'"
+          ssh $SSH_OPTS "$SERVER_USER@$SERVER_HOST" "mkdir -p '$SERVER_PATH'"
 
           rsync -avz \
             --omit-dir-times --no-perms --no-owner --no-group \
@@ -81,20 +82,20 @@ jobs:
             --exclude ".ssh/" \
             --exclude "*.log" \
             --exclude "gunicorn.log" \
-            ./ -e "$SSH_CMD" "$SERVER_USER@$SERVER_HOST:$SERVER_PATH/"
+            ./ -e "ssh $SSH_OPTS" "$SERVER_USER@$SERVER_HOST:$SERVER_PATH/"
 
       - name: Install deps & restart service
         shell: bash
         run: |
-          SSH_CMD="ssh -o BatchMode=yes -i ~/.ssh/id_rsa"
-          if [ -n "$SERVER_PORT" ]; then SSH_CMD="$SSH_CMD -p $SERVER_PORT"; fi
+          SSH_OPTS="-o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=20 -o ServerAliveCountMax=3 -o ConnectTimeout=15 -i ~/.ssh/id_rsa"
+          if [ -n "$SERVER_PORT" ]; then SSH_OPTS="$SSH_OPTS -p $SERVER_PORT"; fi
 
-          $SSH_CMD "$SERVER_USER@$SERVER_HOST" bash -lc "
+          ssh $SSH_OPTS "$SERVER_USER@$SERVER_HOST" bash -lc "
             set -e
             cd '$SERVER_PATH'
             if [ -d venv ]; then . venv/bin/activate; fi
             python3 -m pip install --upgrade pip
             if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-            sudo systemctl restart $APP_SERVICE
-            sudo systemctl is-active --quiet $APP_SERVICE && echo '✅ Service running' || { sudo journalctl -u $APP_SERVICE --no-pager -n 80; exit 1; }
+            sudo -n systemctl restart $APP_SERVICE
+            sudo -n systemctl is-active --quiet $APP_SERVICE && echo '✅ Service running' || { sudo -n journalctl -u $APP_SERVICE --no-pager -n 80; exit 1; }
           "
