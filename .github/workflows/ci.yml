@@ -1,125 +1,85 @@
 name: CI/CD Pipeline
 
-# When to run this workflow
 on:
   push:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
 
-# Jobs to run
 jobs:
   test:
-    # Run on Ubuntu
     runs-on: ubuntu-latest
-    
     steps:
-    # Step 1: Checkout your code
-    - name: Checkout code
-      uses: actions/checkout@v4
-    
-    # Step 2: Set up Python
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-    
-    # Step 3: Install dependencies
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-    
-    # Step 4: Run tests (optional - add if you have tests)
-    - name: Run tests
-      run: |
-        python -m pytest || echo "No tests found"
-    
-    # Step 5: Check code style (optional)
-    - name: Check code style
-      run: |
-        pip install flake8
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics || echo "Code style check completed"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      - run: |
+          python -m pytest || echo "No tests found"
+      - run: |
+          python -m pip install flake8
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics || true
 
   deploy:
-    # Only run if tests pass and we're on main branch
     needs: test
-    runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    
+    runs-on: ubuntu-latest
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    
-    - name: Deploy to production
-      run: |
-        echo "🚀 Deploying to production..."
-        echo "🔍 Debug: Starting deployment process..."
-        
-        # Check if secrets are available
-        echo "🔍 Debug: Checking secrets..."
-        if [ -z "${{ secrets.SERVER_HOST }}" ]; then
-          echo "❌ SERVER_HOST secret is missing!"
-          exit 1
-        fi
-        if [ -z "${{ secrets.SERVER_USER }}" ]; then
-          echo "❌ SERVER_USER secret is missing!"
-          exit 1
-        fi
-        if [ -z "${{ secrets.SERVER_PATH }}" ]; then
-          echo "❌ SERVER_PATH secret is missing!"
-          exit 1
-        fi
-        if [ -z "${{ secrets.SERVER_SSH_KEY }}" ]; then
-          echo "❌ SERVER_SSH_KEY secret is missing!"
-          exit 1
-        fi
-        echo "✅ All secrets are available"
-        
-        # Install SSH key for server access
-        echo "🔍 Debug: Setting up SSH key..."
-        mkdir -p ~/.ssh
-        echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-        echo "✅ SSH key installed"
-        
-        # Skip known hosts (we'll use StrictHostKeyChecking=no)
-        echo "🔍 Debug: Skipping known hosts setup (using StrictHostKeyChecking=no)"
-        
-        # Test SSH connection first
-        echo "🔗 Testing SSH connection..."
-        if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -i ~/.ssh/id_rsa ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "echo 'SSH connection successful'"; then
-          echo "✅ SSH connection successful"
-        else
-          echo "❌ SSH connection failed!"
-          exit 1
-        fi
-        
-        # Deploy to your server
-        echo "📦 Uploading files to server..."
-        if rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa" ./ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PATH }}/; then
-          echo "✅ Files uploaded successfully"
-        else
-          echo "❌ File upload failed!"
-          exit 1
-        fi
-        
-        echo "🔄 Restarting application on server..."
-        if ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
-          cd ${{ secrets.SERVER_PATH }}
-          echo "Current directory: $(pwd)"
-          echo "Installing dependencies..."
-          pip install -r requirements.txt
-          echo "Restarting service..."
-          sudo systemctl restart securityplus
-          echo "Checking service status..."
-          sudo systemctl status securityplus --no-pager
-        EOF
-        then
-          echo "✅ Application restarted successfully"
-        else
-          echo "❌ Application restart failed!"
-          exit 1
-        fi
-        
-        echo "✅ Deployment completed successfully!"
+      - uses: actions/checkout@v4
+
+      - name: Check required secrets
+        run: |
+          for s in SERVER_HOST SERVER_USER SERVER_PATH SERVER_SSH_KEY; do
+            [ -n "${{ secrets[$s] }}" ] || { echo "❌ Missing $s"; exit 1; }
+          done
+          echo "✅ Secrets OK"
+
+      - name: SSH setup (key + host pinning)
+        env:
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          echo "$SERVER_SSH_KEY" > ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "$SERVER_HOST" >> ~/.ssh/known_hosts
+
+      - name: Sync project to server (safe rsync)
+        env:
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_PATH: ${{ secrets.SERVER_PATH }}
+        run: |
+          RSYNC_SSH="ssh -o BatchMode=yes -i ~/.ssh/id_rsa"
+          ssh -o BatchMode=yes -i ~/.ssh/id_rsa "$SERVER_USER@$SERVER_HOST" "mkdir -p '$SERVER_PATH'"
+          rsync -avz \
+            --omit-dir-times --no-perms --no-owner --no-group \
+            --exclude ".github/" \
+            --exclude "venv/" \
+            --exclude "__pycache__/" --exclude "*.pyc" \
+            --exclude ".env" \
+            --exclude ".ssh/" \
+            --exclude "*.log" \
+            --exclude "gunicorn.log" \
+            ./ -e "$RSYNC_SSH" "$SERVER_USER@$SERVER_HOST:$SERVER_PATH/"
+
+      - name: Install deps & restart service
+        env:
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_PATH: ${{ secrets.SERVER_PATH }}
+          APP_SERVICE: securityplus
+        run: |
+          ssh -o BatchMode=yes -i ~/.ssh/id_rsa "$SERVER_USER@$SERVER_HOST" bash -s <<'EOF'
+            set -e
+            cd "${SERVER_PATH}"
+            if [ -d venv ]; then . venv/bin/activate; fi
+            python3 -m pip install --upgrade pip
+            [ -f requirements.txt ] && pip install -r requirements.txt || true
+            sudo systemctl restart ${APP_SERVICE}
+            sudo systemctl is-active --quiet ${APP_SERVICE} \
+              && echo "✅ Deployed and service running" \
+              || { sudo journalctl -u ${APP_SERVICE} --no-pager -n 50; exit 1; }
+EOF
