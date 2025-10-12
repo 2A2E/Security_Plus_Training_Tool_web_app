@@ -72,14 +72,4 @@ jobs:
           SERVER_PATH: ${{ secrets.SERVER_PATH }}
           APP_SERVICE: securityplus
         run: |
-          ssh -o BatchMode=yes -i ~/.ssh/id_rsa "$SERVER_USER@$SERVER_HOST" bash -s <<'EOF'
-            set -e
-            cd "${SERVER_PATH}"
-            if [ -d venv ]; then . venv/bin/activate; fi
-            python3 -m pip install --upgrade pip
-            [ -f requirements.txt ] && pip install -r requirements.txt || true
-            sudo systemctl restart ${APP_SERVICE}
-            sudo systemctl is-active --quiet ${APP_SERVICE} \
-              && echo "✅ Deployed and service running" \
-              || { sudo journalctl -u ${APP_SERVICE} --no-pager -n 50; exit 1; }
-EOF
+          ssh -o BatchMode=yes -i ~/.ssh/id_rsa "$SERVER_USER@$SERVER_HOST" "set -e && cd '$SERVER_PATH' && if [ -d venv ]; then . venv/bin/activate; fi && python3 -m pip install --upgrade pip && [ -f requirements.txt ] && pip install -r requirements.txt || true && sudo systemctl restart $APP_SERVICE && sudo systemctl is-active --quiet $APP_SERVICE && echo '✅ Deployed and service running' || { sudo journalctl -u $APP_SERVICE --no-pager -n 50; exit 1; }"
