@@ -58,6 +58,22 @@ jobs:
           : "${SERVER_SSH_KEY:?Missing SERVER_SSH_KEY secret}"
           echo "✅ Secrets present"
 
+      - name: Test connectivity to server
+        shell: bash
+        run: |
+          echo "Testing connectivity to $SERVER_HOST..."
+          PORT=${SERVER_PORT:-22}
+          echo "Using port: $PORT"
+          
+          # Test basic connectivity
+          timeout 10 nc -zv "$SERVER_HOST" "$PORT" || echo "❌ Port $PORT not reachable"
+          
+          # Test if host resolves
+          nslookup "$SERVER_HOST" || echo "❌ DNS resolution failed"
+          
+          # Show what we're trying to connect to
+          echo "Attempting SSH to: $SERVER_USER@$SERVER_HOST:$PORT"
+
       - name: SSH setup (private key)
         shell: bash
         run: |
