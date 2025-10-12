@@ -68,7 +68,7 @@ jobs:
       - name: Sync project to server (rsync)
         shell: bash
         run: |
-          SSH_OPTS="-o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=20 -o ServerAliveCountMax=3 -o ConnectTimeout=15 -i ~/.ssh/id_rsa"
+          SSH_OPTS="-4 -o BatchMode=yes -o IdentitiesOnly=yes -o PreferredAuthentications=publickey -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=20 -o ServerAliveCountMax=3 -o ConnectTimeout=15 -i ~/.ssh/id_rsa"
           if [ -n "$SERVER_PORT" ]; then SSH_OPTS="$SSH_OPTS -p $SERVER_PORT"; fi
 
           ssh $SSH_OPTS "$SERVER_USER@$SERVER_HOST" "mkdir -p '$SERVER_PATH'"
@@ -87,7 +87,7 @@ jobs:
       - name: Install deps & restart service
         shell: bash
         run: |
-          SSH_OPTS="-o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=20 -o ServerAliveCountMax=3 -o ConnectTimeout=15 -i ~/.ssh/id_rsa"
+          SSH_OPTS="-4 -o BatchMode=yes -o IdentitiesOnly=yes -o PreferredAuthentications=publickey -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=20 -o ServerAliveCountMax=3 -o ConnectTimeout=15 -i ~/.ssh/id_rsa"
           if [ -n "$SERVER_PORT" ]; then SSH_OPTS="$SSH_OPTS -p $SERVER_PORT"; fi
 
           ssh $SSH_OPTS "$SERVER_USER@$SERVER_HOST" bash -lc "
