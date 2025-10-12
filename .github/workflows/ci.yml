@@ -11,15 +11,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
+
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: |
+
+      - name: Install dependencies
+        run: |
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-      - run: |
+
+      - name: Run pytest (tolerate no tests)
+        run: |
           python -m pytest || echo "No tests found"
-      - run: |
+
+      - name: Run flake8 (non-fatal)
+        run: |
           python -m pip install flake8
           flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics || true
 
@@ -27,33 +34,44 @@ jobs:
     needs: test
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
+    env:
+      # Expose secrets as environment variables once (safe, standard pattern)
+      SERVER_HOST: ${{ secrets.SERVER_HOST }}
+      SERVER_USER: ${{ secrets.SERVER_USER }}
+      SERVER_PATH: ${{ secrets.SERVER_PATH }}
+      SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+      SERVER_PORT: ${{ secrets.SERVER_PORT }}   # optional; set in repo secrets if non-22
+      APP_SERVICE: securityplus                 # your systemd unit name
     steps:
       - uses: actions/checkout@v4
 
-      - name: Check required secrets
+      - name: Validate required secrets (no expression indexing)
+        shell: bash
         run: |
-          for s in SERVER_HOST SERVER_USER SERVER_PATH SERVER_SSH_KEY; do
-            [ -n "${{ secrets[$s] }}" ] || { echo "❌ Missing $s"; exit 1; }
-          done
-          echo "✅ Secrets OK"
+          : "${SERVER_HOST:?Missing SERVER_HOST secret}"
+          : "${SERVER_USER:?Missing SERVER_USER secret}"
+          : "${SERVER_PATH:?Missing SERVER_PATH secret}"
+          : "${SERVER_SSH_KEY:?Missing SERVER_SSH_KEY secret}"
+          echo "✅ Secrets present"
 
-      - name: SSH setup (key + host pinning)
-        env:
-          SERVER_HOST: ${{ secrets.SERVER_HOST }}
-          SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+      - name: SSH setup (key + known_hosts)
+        shell: bash
         run: |
           mkdir -p ~/.ssh && chmod 700 ~/.ssh
-          echo "$SERVER_SSH_KEY" > ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H "$SERVER_HOST" >> ~/.ssh/known_hosts
+          echo "$SERVER_SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          PORT_OPTS=""
+          if [ -n "$SERVER_PORT" ]; then PORT_OPTS="-p $SERVER_PORT"; fi
+          ssh-keyscan $PORT_OPTS -H "$SERVER_HOST" >> ~/.ssh/known_hosts
 
-      - name: Sync project to server (safe rsync)
-        env:
-          SERVER_HOST: ${{ secrets.SERVER_HOST }}
-          SERVER_USER: ${{ secrets.SERVER_USER }}
-          SERVER_PATH: ${{ secrets.SERVER_PATH }}
+      - name: Sync project to server (rsync)
+        shell: bash
         run: |
-          RSYNC_SSH="ssh -o BatchMode=yes -i ~/.ssh/id_rsa"
-          ssh -o BatchMode=yes -i ~/.ssh/id_rsa "$SERVER_USER@$SERVER_HOST" "mkdir -p '$SERVER_PATH'"
+          SSH_CMD="ssh -o BatchMode=yes -i ~/.ssh/id_rsa"
+          if [ -n "$SERVER_PORT" ]; then SSH_CMD="$SSH_CMD -p $SERVER_PORT"; fi
+
+          $SSH_CMD "$SERVER_USER@$SERVER_HOST" "mkdir -p '$SERVER_PATH'"
+
           rsync -avz \
             --omit-dir-times --no-perms --no-owner --no-group \
             --exclude ".github/" \
@@ -63,13 +81,20 @@ jobs:
             --exclude ".ssh/" \
             --exclude "*.log" \
             --exclude "gunicorn.log" \
-            ./ -e "$RSYNC_SSH" "$SERVER_USER@$SERVER_HOST:$SERVER_PATH/"
+            ./ -e "$SSH_CMD" "$SERVER_USER@$SERVER_HOST:$SERVER_PATH/"
 
       - name: Install deps & restart service
-        env:
-          SERVER_HOST: ${{ secrets.SERVER_HOST }}
-          SERVER_USER: ${{ secrets.SERVER_USER }}
-          SERVER_PATH: ${{ secrets.SERVER_PATH }}
-          APP_SERVICE: securityplus
+        shell: bash
         run: |
-          ssh -o BatchMode=yes -i ~/.ssh/id_rsa "$SERVER_USER@$SERVER_HOST" "set -e && cd '$SERVER_PATH' && if [ -d venv ]; then . venv/bin/activate; fi && python3 -m pip install --upgrade pip && [ -f requirements.txt ] && pip install -r requirements.txt || true && sudo systemctl restart $APP_SERVICE && sudo systemctl is-active --quiet $APP_SERVICE && echo '✅ Deployed and service running' || { sudo journalctl -u $APP_SERVICE --no-pager -n 50; exit 1; }"
+          SSH_CMD="ssh -o BatchMode=yes -i ~/.ssh/id_rsa"
+          if [ -n "$SERVER_PORT" ]; then SSH_CMD="$SSH_CMD -p $SERVER_PORT"; fi
+
+          $SSH_CMD "$SERVER_USER@$SERVER_HOST" bash -lc "
+            set -e
+            cd '$SERVER_PATH'
+            if [ -d venv ]; then . venv/bin/activate; fi
+            python3 -m pip install --upgrade pip
+            if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+            sudo systemctl restart $APP_SERVICE
+            sudo systemctl is-active --quiet $APP_SERVICE && echo '✅ Service running' || { sudo journalctl -u $APP_SERVICE --no-pager -n 80; exit 1; }
+          "
