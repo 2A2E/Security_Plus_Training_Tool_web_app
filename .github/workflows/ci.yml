@@ -7,69 +7,62 @@ deploy:
     group: deploy-${{ github.ref }}
     cancel-in-progress: true
   env:
-    SERVER_HOST: ${{ secrets.SERVER_HOST }}
-    SERVER_USER: ${{ secrets.SERVER_USER }}
-    SERVER_PATH: ${{ secrets.SERVER_PATH }}
-    SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
-    SERVER_PORT: ${{ secrets.SERVER_PORT }} # optional
+    # Use Variables or Secrets; just be consistent and set them.
+    SERVER_HOST: ${{ vars.SERVER_HOST }}
+    SERVER_USER: ${{ vars.SERVER_USER }}
+    SERVER_PATH: ${{ vars.SERVER_PATH }}
+    SERVER_PORT: ${{ vars.SERVER_PORT }}
     APP_SERVICE: securityplus
   steps:
     - uses: actions/checkout@v4
 
-    - name: Validate required secrets
+    - name: Validate config
       shell: bash
       run: |
-        : "${SERVER_HOST:?Missing SERVER_HOST secret}"
-        : "${SERVER_USER:?Missing SERVER_USER secret}"
-        : "${SERVER_PATH:?Missing SERVER_PATH secret}"
-        : "${SERVER_SSH_KEY:?Missing SERVER_SSH_KEY secret}"
-        echo "✅ Secrets present"
+        : "${SERVER_HOST:?Missing SERVER_HOST var/secret}"
+        : "${SERVER_USER:?Missing SERVER_USER var/secret}"
+        : "${SERVER_PATH:?Missing SERVER_PATH var/secret}"
+        : "${{ secrets.SERVER_SSH_KEY }}"; test -n "${{ secrets.SERVER_SSH_KEY }}" || { echo "Missing SERVER_SSH_KEY secret"; exit 1; }
+        echo "✅ Inputs present"
 
-    - name: Write private key file (normalize line endings)
+    - name: Write SSH key (normalize line endings)
       shell: bash
       run: |
         mkdir -p ~/.ssh && chmod 700 ~/.ssh
-        # Write exactly as provided and strip CRLF to avoid libcrypto errors
-        printf '%s\n' "$SERVER_SSH_KEY" > ~/.ssh/id_ed25519
+        printf '%s\n' "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/id_ed25519
         sed -i 's/\r$//' ~/.ssh/id_ed25519
         chmod 600 ~/.ssh/id_ed25519
+        # Trust the host
+        PORT=${SERVER_PORT:-22}
+        ssh-keyscan -p "$PORT" "$SERVER_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+        chmod 600 ~/.ssh/known_hosts
 
-    - name: Quick SSH dry-run (no command)
+    - name: Smoke check SSH
       shell: bash
       run: |
-        SSH_OPTS="-4 -o BatchMode=yes -o IdentitiesOnly=yes -o PreferredAuthentications=publickey -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=20 -o ServerAliveCountMax=3 -o ConnectTimeout=15 -i ~/.ssh/id_ed25519"
-        if [ -n "$SERVER_PORT" ]; then SSH_OPTS="$SSH_OPTS -p $SERVER_PORT"; fi
-        # Try a trivial command and show who we are; fail if auth fails
-        ssh $SSH_OPTS "$SERVER_USER@$SERVER_HOST" "echo OK && whoami && hostname"
+        PORT=${SERVER_PORT:-22}
+        SSH_OPTS="-4 -o BatchMode=yes -o IdentitiesOnly=yes -o ConnectTimeout=15 -o ServerAliveInterval=20 -o ServerAliveCountMax=3 -i ~/.ssh/id_ed25519 -p $PORT"
+        ssh $SSH_OPTS "$SERVER_USER@$SERVER_HOST" "echo 'SSH OK'; whoami; hostname"
 
-    - name: Create target dir on server
+    - name: Rsync project
       shell: bash
       run: |
-        SSH_OPTS="-4 -o BatchMode=yes -o IdentitiesOnly=yes -o PreferredAuthentications=publickey -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=20 -o ServerAliveCountMax=3 -o ConnectTimeout=15 -i ~/.ssh/id_ed25519"
-        if [ -n "$SERVER_PORT" ]; then SSH_OPTS="$SSH_OPTS -p $SERVER_PORT"; fi
+        PORT=${SERVER_PORT:-22}
+        SSH_OPTS="-4 -o BatchMode=yes -o IdentitiesOnly=yes -o ConnectTimeout=15 -o ServerAliveInterval=20 -o ServerAliveCountMax=3 -i ~/.ssh/id_ed25519 -p $PORT"
         ssh $SSH_OPTS "$SERVER_USER@$SERVER_HOST" "mkdir -p '$SERVER_PATH'"
-
-    - name: Rsync project to server
-      shell: bash
-      run: |
-        SSH_OPTS="-4 -o BatchMode=yes -o IdentitiesOnly=yes -o PreferredAuthentications=publickey -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=20 -o ServerAliveCountMax=3 -o ConnectTimeout=15 -i ~/.ssh/id_ed25519"
-        if [ -n "$SERVER_PORT" ]; then SSH_OPTS="$SSH_OPTS -p $SERVER_PORT"; fi
         rsync -avz \
           --omit-dir-times --no-perms --no-owner --no-group \
-          --exclude ".github/" \
-          --exclude "venv/" \
+          --exclude ".github/" --exclude "venv/" \
           --exclude "__pycache__/" --exclude "*.pyc" \
-          --exclude ".env" \
-          --exclude ".ssh/" \
-          --exclude "*.log" \
-          --exclude "gunicorn.log" \
+          --exclude ".env" --exclude ".ssh/" \
+          --exclude "*.log" --exclude "gunicorn.log" \
           ./ -e "ssh $SSH_OPTS" "$SERVER_USER@$SERVER_HOST:$SERVER_PATH/"
 
-    - name: Install deps & restart service
+    - name: Install deps & restart
       shell: bash
       run: |
-        SSH_OPTS="-4 -o BatchMode=yes -o IdentitiesOnly=yes -o PreferredAuthentications=publickey -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=20 -o ServerAliveCountMax=3 -o ConnectTimeout=15 -i ~/.ssh/id_ed25519"
-        if [ -n "$SERVER_PORT" ]; then SSH_OPTS="$SSH_OPTS -p $SERVER_PORT"; fi
+        PORT=${SERVER_PORT:-22}
+        SSH_OPTS="-4 -o BatchMode=yes -o IdentitiesOnly=yes -o ConnectTimeout=15 -o ServerAliveInterval=20 -o ServerAliveCountMax=3 -i ~/.ssh/id_ed25519 -p $PORT"
         ssh $SSH_OPTS "$SERVER_USER@$SERVER_HOST" bash -lc "
           set -e
           cd '$SERVER_PATH'
@@ -77,5 +70,5 @@ deploy:
           python3 -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           sudo -n systemctl restart $APP_SERVICE
-          sudo -n systemctl is-active --quiet $APP_SERVICE && echo '✅ Service running' || { sudo -n journalctl -u $APP_SERVICE --no-pager -n 80; exit 1; }
+          sudo -n systemctl is-active --quiet $APP_SERVICE && echo '✅ Service running' || { sudo -n journalctl -u $APP_SERVICE --no-pager -n 120; exit 1; }
         "
