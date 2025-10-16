@@ -9,6 +9,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -23,95 +24,101 @@ jobs:
 
       - name: Run pytest (tolerate no tests)
         run: |
-          python -m pytest || echo "No tests found"
+          set +e
+          python -m pytest
+          echo "🧪 pytest finished (ok if no tests)."
 
       - name: Run flake8 (non-fatal)
         run: |
-          python -m pip install flake8
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics || true
+          python -m pip install --quiet flake8
+          set +e
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          echo "✅ flake8 completed (warnings allowed)."
 
   deploy:
     needs: test
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     concurrency:
       group: deploy-${{ github.ref }}
       cancel-in-progress: true
     env:
-      # Expose secrets as environment variables once (safe, standard pattern)
-      SERVER_HOST: ${{ secrets.SERVER_HOST }}
-      SERVER_USER: ${{ secrets.SERVER_USER }}
-      SERVER_PATH: ${{ secrets.SERVER_PATH }}
-      SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
-      SERVER_PORT: ${{ secrets.SERVER_PORT }}   # optional; set in repo secrets if non-22
-      APP_SERVICE: securityplus                 # your systemd unit name
+      SERVER_HOST: ${{ vars.SERVER_HOST }}
+      SERVER_USER: ${{ vars.SERVER_USER }}
+      SERVER_PATH: ${{ vars.SERVER_PATH }}
+      SERVER_PORT: ${{ vars.SERVER_PORT }}
+      APP_SERVICE: securityplus
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: Validate required secrets (no expression indexing)
-        shell: bash
+      - name: Validate variables & secret
         run: |
-          : "${SERVER_HOST:?Missing SERVER_HOST secret}"
-          : "${SERVER_USER:?Missing SERVER_USER secret}"
-          : "${SERVER_PATH:?Missing SERVER_PATH secret}"
-          : "${SERVER_SSH_KEY:?Missing SERVER_SSH_KEY secret}"
-          echo "✅ Secrets present"
+          : "${SERVER_HOST:?Missing repo variable SERVER_HOST}"
+          : "${SERVER_USER:?Missing repo variable SERVER_USER}"
+          : "${SERVER_PATH:?Missing repo variable SERVER_PATH}"
+          : "${{ secrets.SERVER_SSH_KEY }}"
 
-      - name: Test connectivity to server
+      - name: Write SSH private key (ED25519)
         shell: bash
         run: |
-          echo "Testing connectivity to $SERVER_HOST..."
-          PORT=${SERVER_PORT:-22}
-          echo "Using port: $PORT"
-          
-          # Test basic connectivity
-          timeout 10 nc -zv "$SERVER_HOST" "$PORT" || echo "❌ Port $PORT not reachable"
-          
-          # Test if host resolves
-          nslookup "$SERVER_HOST" || echo "❌ DNS resolution failed"
-          
-          # Show what we're trying to connect to
-          echo "Attempting SSH to: $SERVER_USER@$SERVER_HOST:$PORT"
-
-      - name: SSH setup (private key)
-        shell: bash
-        run: |
+          set -euo pipefail
           mkdir -p ~/.ssh && chmod 700 ~/.ssh
-          printf '%s\n' "$SERVER_SSH_KEY" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
+          printf '%s\n' "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/id_ed25519
+          # Strip CR in case the secret was pasted from Windows
+          tr -d '\r' < ~/.ssh/id_ed25519 > ~/.ssh/k && mv ~/.ssh/k ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
 
-      - name: Sync project to server (rsync)
+          # (Optional) print runner public key & fingerprint for troubleshooting
+          ssh-keygen -y -f ~/.ssh/id_ed25519 > ~/.ssh/id_ed25519.pub
+          echo "Runner public key:"; cat ~/.ssh/id_ed25519.pub
+          echo "Runner fingerprint:"
+          ssh-keygen -E sha256 -lf ~/.ssh/id_ed25519.pub
+
+      - name: Smoke test SSH connectivity
         shell: bash
         run: |
-          SSH_OPTS="-4 -o BatchMode=yes -o IdentitiesOnly=yes -o PreferredAuthentications=publickey -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=20 -o ServerAliveCountMax=3 -o ConnectTimeout=15 -i ~/.ssh/id_rsa"
-          if [ -n "$SERVER_PORT" ]; then SSH_OPTS="$SSH_OPTS -p $SERVER_PORT"; fi
+          PORT=${SERVER_PORT:-22}
+          ssh -vvv -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
+              -p "$PORT" -i ~/.ssh/id_ed25519 \
+              "$SERVER_USER@$SERVER_HOST" "echo 'SSH OK'; whoami; hostname"
 
-          ssh $SSH_OPTS "$SERVER_USER@$SERVER_HOST" "mkdir -p '$SERVER_PATH'"
+      - name: Upload code (tar over SSH)
+        shell: bash
+        run: |
+          set -euo pipefail
+          PORT=${SERVER_PORT:-22}
+          ssh -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
+              -p "$PORT" -i ~/.ssh/id_ed25519 \
+              "$SERVER_USER@$SERVER_HOST" "mkdir -p '$SERVER_PATH'"
 
-          rsync -avz \
-            --omit-dir-times --no-perms --no-owner --no-group \
-            --exclude ".github/" \
-            --exclude "venv/" \
-            --exclude "__pycache__/" --exclude "*.pyc" \
-            --exclude ".env" \
-            --exclude ".ssh/" \
-            --exclude "*.log" \
-            --exclude "gunicorn.log" \
-            ./ -e "ssh $SSH_OPTS" "$SERVER_USER@$SERVER_HOST:$SERVER_PATH/"
+          # Create archive locally and extract remotely (fast, reliable)
+          TAR_EXCLUDES=(
+            --exclude='.git' --exclude='.github'
+            --exclude='venv' --exclude='__pycache__' --exclude='*.pyc'
+            --exclude='.env' --exclude='.ssh'
+            --exclude='*.log' --exclude='gunicorn.log'
+          )
+
+          tar -czf - "${TAR_EXCLUDES[@]}" . \
+            | ssh -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
+                   -p "$PORT" -i ~/.ssh/id_ed25519 \
+                   "$SERVER_USER@$SERVER_HOST" "tar -xzf - -C '$SERVER_PATH'"
 
       - name: Install deps & restart service
         shell: bash
         run: |
-          SSH_OPTS="-4 -o BatchMode=yes -o IdentitiesOnly=yes -o PreferredAuthentications=publickey -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=20 -o ServerAliveCountMax=3 -o ConnectTimeout=15 -i ~/.ssh/id_rsa"
-          if [ -n "$SERVER_PORT" ]; then SSH_OPTS="$SSH_OPTS -p $SERVER_PORT"; fi
-
-          ssh $SSH_OPTS "$SERVER_USER@$SERVER_HOST" bash -lc "
-            set -e
-            cd '$SERVER_PATH'
-            if [ -d venv ]; then . venv/bin/activate; fi
-            python3 -m pip install --upgrade pip
-            if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-            sudo -n systemctl restart $APP_SERVICE
-            sudo -n systemctl is-active --quiet $APP_SERVICE && echo '✅ Service running' || { sudo -n journalctl -u $APP_SERVICE --no-pager -n 80; exit 1; }
-          "
+          PORT=${SERVER_PORT:-22}
+          ssh -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
+              -p "$PORT" -i ~/.ssh/id_ed25519 \
+              "$SERVER_USER@$SERVER_HOST" bash -lc "
+                set -e
+                cd '$SERVER_PATH'
+                if [ -d venv ]; then . venv/bin/activate; fi
+                python3 -m pip install --upgrade pip
+                if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+                sudo -n systemctl restart $APP_SERVICE
+                sudo -n systemctl is-active --quiet $APP_SERVICE && echo '✅ $APP_SERVICE running' \
+                  || { echo '❌ Service failed:'; sudo -n journalctl -u $APP_SERVICE --no-pager -n 150; exit 1; }
+              "
