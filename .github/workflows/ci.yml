@@ -44,35 +44,36 @@ jobs:
       group: deploy-${{ github.ref }}
       cancel-in-progress: true
     env:
-      SERVER_HOST: ${{ vars.SERVER_HOST }}
-      SERVER_USER: ${{ vars.SERVER_USER }}
-      SERVER_PATH: ${{ vars.SERVER_PATH }}
-      SERVER_PORT: ${{ vars.SERVER_PORT }}
+      # ⬇️ Read from SECRETS (not VARS)
+      SERVER_HOST: ${{ secrets.SERVER_HOST }}
+      SERVER_USER: ${{ secrets.SERVER_USER }}
+      SERVER_PATH: ${{ secrets.SERVER_PATH }}
+      SERVER_PORT: ${{ secrets.SERVER_PORT }}
       APP_SERVICE: securityplus
+      # Keep the private key in secrets as you already have:
+      SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Validate variables & secret
+        shell: bash
         run: |
-          : "${SERVER_HOST:?Missing repo variable SERVER_HOST}"
-          : "${SERVER_USER:?Missing repo variable SERVER_USER}"
-          : "${SERVER_PATH:?Missing repo variable SERVER_PATH}"
-          : "${{ secrets.SERVER_SSH_KEY }}"
+          : "${SERVER_HOST:?Missing secret SERVER_HOST}"
+          : "${SERVER_USER:?Missing secret SERVER_USER}"
+          : "${SERVER_PATH:?Missing secret SERVER_PATH}"
+          : "${SERVER_SSH_KEY:?Missing secret SERVER_SSH_KEY}"
+          echo "Inputs present. Proceeding…"
 
       - name: Write SSH private key (ED25519)
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p ~/.ssh && chmod 700 ~/.ssh
-          printf '%s\n' "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/id_ed25519
-          # Strip CR in case the secret was pasted from Windows
+          printf '%s\n' "$SERVER_SSH_KEY" > ~/.ssh/id_ed25519
           tr -d '\r' < ~/.ssh/id_ed25519 > ~/.ssh/k && mv ~/.ssh/k ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-
-          # (Optional) print runner public key & fingerprint for troubleshooting
           ssh-keygen -y -f ~/.ssh/id_ed25519 > ~/.ssh/id_ed25519.pub
-          echo "Runner public key:"; cat ~/.ssh/id_ed25519.pub
           echo "Runner fingerprint:"
           ssh-keygen -E sha256 -lf ~/.ssh/id_ed25519.pub
 
@@ -93,7 +94,6 @@ jobs:
               -p "$PORT" -i ~/.ssh/id_ed25519 \
               "$SERVER_USER@$SERVER_HOST" "mkdir -p '$SERVER_PATH'"
 
-          # Create archive locally and extract remotely (fast, reliable)
           TAR_EXCLUDES=(
             --exclude='.git' --exclude='.github'
             --exclude='venv' --exclude='__pycache__' --exclude='*.pyc'
