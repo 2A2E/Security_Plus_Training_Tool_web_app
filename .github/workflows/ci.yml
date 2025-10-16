@@ -39,54 +39,39 @@ jobs:
       group: deploy-${{ github.ref }}
       cancel-in-progress: true
     env:
-      # Expose secrets as environment variables once (safe, standard pattern)
-      SERVER_HOST: ${{ secrets.SERVER_HOST }}
-      SERVER_USER: ${{ secrets.SERVER_USER }}
-      SERVER_PATH: ${{ secrets.SERVER_PATH }}
-      SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
-      SERVER_PORT: ${{ secrets.SERVER_PORT }}   # optional; set in repo secrets if non-22
-      APP_SERVICE: securityplus                 # your systemd unit name
+      SERVER_HOST: ${{ vars.SERVER_HOST }}
+      SERVER_USER: ${{ vars.SERVER_USER }}
+      SERVER_PATH: ${{ vars.SERVER_PATH }}
+      SERVER_PORT: ${{ vars.SERVER_PORT }}
+      APP_SERVICE: securityplus
     steps:
       - uses: actions/checkout@v4
 
-      - name: Validate required secrets (no expression indexing)
-        shell: bash
-        run: |
-          : "${SERVER_HOST:?Missing SERVER_HOST secret}"
-          : "${SERVER_USER:?Missing SERVER_USER secret}"
-          : "${SERVER_PATH:?Missing SERVER_PATH secret}"
-          : "${SERVER_SSH_KEY:?Missing SERVER_SSH_KEY secret}"
-          echo "✅ Secrets present"
+      # Load the private key into ssh-agent
+      - name: Add SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Test connectivity to server
-        shell: bash
+      # Trust host key (safer than StrictHostKeyChecking=accept-new inside each ssh command)
+      - name: Add server to known_hosts
         run: |
-          echo "Testing connectivity to $SERVER_HOST..."
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
           PORT=${SERVER_PORT:-22}
-          echo "Using port: $PORT"
-          
-          # Test basic connectivity
-          timeout 10 nc -zv "$SERVER_HOST" "$PORT" || echo "❌ Port $PORT not reachable"
-          
-          # Test if host resolves
-          nslookup "$SERVER_HOST" || echo "❌ DNS resolution failed"
-          
-          # Show what we're trying to connect to
-          echo "Attempting SSH to: $SERVER_USER@$SERVER_HOST:$PORT"
+          ssh-keyscan -p "$PORT" "$SERVER_HOST" >> ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
 
-      - name: SSH setup (private key)
-        shell: bash
+      - name: Smoke check connectivity
         run: |
-          mkdir -p ~/.ssh && chmod 700 ~/.ssh
-          printf '%s\n' "$SERVER_SSH_KEY" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
+          PORT=${SERVER_PORT:-22}
+          echo "→ SSH to $SERVER_USER@$SERVER_HOST:$PORT"
+          ssh -o BatchMode=yes -o ConnectTimeout=10 -p "$PORT" "$SERVER_USER@$SERVER_HOST" "echo 'SSH OK'; hostname; whoami"
 
       - name: Sync project to server (rsync)
-        shell: bash
         run: |
-          SSH_OPTS="-4 -o BatchMode=yes -o IdentitiesOnly=yes -o PreferredAuthentications=publickey -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=20 -o ServerAliveCountMax=3 -o ConnectTimeout=15 -i ~/.ssh/id_rsa"
-          if [ -n "$SERVER_PORT" ]; then SSH_OPTS="$SSH_OPTS -p $SERVER_PORT"; fi
-
+          PORT=${SERVER_PORT:-22}
+          SSH_OPTS="-4 -o BatchMode=yes -o IdentitiesOnly=yes -o ServerAliveInterval=20 -o ServerAliveCountMax=3 -o ConnectTimeout=15 -p $PORT"
           ssh $SSH_OPTS "$SERVER_USER@$SERVER_HOST" "mkdir -p '$SERVER_PATH'"
 
           rsync -avz \
@@ -101,11 +86,9 @@ jobs:
             ./ -e "ssh $SSH_OPTS" "$SERVER_USER@$SERVER_HOST:$SERVER_PATH/"
 
       - name: Install deps & restart service
-        shell: bash
         run: |
-          SSH_OPTS="-4 -o BatchMode=yes -o IdentitiesOnly=yes -o PreferredAuthentications=publickey -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=20 -o ServerAliveCountMax=3 -o ConnectTimeout=15 -i ~/.ssh/id_rsa"
-          if [ -n "$SERVER_PORT" ]; then SSH_OPTS="$SSH_OPTS -p $SERVER_PORT"; fi
-
+          PORT=${SERVER_PORT:-22}
+          SSH_OPTS="-4 -o BatchMode=yes -o IdentitiesOnly=yes -o ServerAliveInterval=20 -o ServerAliveCountMax=3 -o ConnectTimeout=15 -p $PORT"
           ssh $SSH_OPTS "$SERVER_USER@$SERVER_HOST" bash -lc "
             set -e
             cd '$SERVER_PATH'
@@ -113,5 +96,5 @@ jobs:
             python3 -m pip install --upgrade pip
             if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
             sudo -n systemctl restart $APP_SERVICE
-            sudo -n systemctl is-active --quiet $APP_SERVICE && echo '✅ Service running' || { sudo -n journalctl -u $APP_SERVICE --no-pager -n 80; exit 1; }
+            sudo -n systemctl is-active --quiet $APP_SERVICE && echo '✅ Service running' || { sudo -n journalctl -u $APP_SERVICE --no-pager -n 120; exit 1; }
           "
