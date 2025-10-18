@@ -76,6 +76,9 @@ class QuizSession:
             "wrong_questions_count": len(self.wrong_questions)
         }
         
+        # Move to next question
+        self.next_question()
+        
         return result
     
     def next_question(self) -> bool:
@@ -127,22 +130,41 @@ class QuizSession:
         question_type = question.get('question_type', '')
         explanation = question.get('explanation', 'No explanation available.')
         
-        if question_type == 'multiple_choice':
-            # For multiple choice, correct_answer is the index (0-based)
-            correct_answer = question.get('correct_answer', '0')
-            try:
-                user_index = int(user_answer)
-                is_correct = str(user_index) == str(correct_answer)
-            except ValueError:
-                is_correct = False
+        if question_type in ['multiple_choice', 'concept_multiple_choice', 'scenario_multiple_choice']:
+            # For multiple choice, correct_answer can be index or actual answer text
+            correct_answer = question.get('correct_answer', '')
+            options = question.get('options', [])
+            
+            # If correct_answer is a number (index), check by index
+            if isinstance(correct_answer, (int, str)) and str(correct_answer).isdigit():
+                try:
+                    user_index = int(user_answer)
+                    correct_index = int(correct_answer)
+                    is_correct = user_index == correct_index
+                except ValueError:
+                    is_correct = False
+            else:
+                # If correct_answer is text, check against options
+                try:
+                    user_index = int(user_answer)
+                    if 0 <= user_index < len(options):
+                        user_answer_text = options[user_index]
+                        is_correct = str(user_answer_text).strip().lower() == str(correct_answer).strip().lower()
+                    else:
+                        is_correct = False
+                except (ValueError, IndexError):
+                    is_correct = False
         
         elif question_type == 'true_false':
             correct_answer = question.get('correct_answer', 'True')
             is_correct = user_answer.lower() == str(correct_answer).lower()
         
-        elif question_type == 'fill_in_blank':
-            # For fill-in-blank, check against correct_answers array
+        elif question_type in ['fill_in_blank', 'fill_in_the_blank']:
+            # For fill-in-blank, check against correct_answers array or correct_answer
             correct_answers = question.get('correct_answers', [])
+            if not correct_answers:
+                correct_answers = [question.get('correct_answer', '')]
+            
             if isinstance(correct_answers, str):
                 try:
                     correct_answers = json.loads(correct_answers)
@@ -150,10 +172,16 @@ class QuizSession:
                     correct_answers = [correct_answers]
             
             user_answer_clean = user_answer.strip().lower()
-            is_correct = any(user_answer_clean == ans.strip().lower() for ans in correct_answers)
+            is_correct = any(user_answer_clean == str(ans).strip().lower() for ans in correct_answers if ans)
         
         else:
-            is_correct = False
+            # Default to multiple choice logic for unknown types
+            correct_answer = question.get('correct_answer', '0')
+            try:
+                user_index = int(user_answer)
+                is_correct = str(user_index) == str(correct_answer)
+            except ValueError:
+                is_correct = False
         
         return is_correct, explanation
     
@@ -161,36 +189,39 @@ class QuizSession:
         """Get the correct answer for display"""
         question_type = question.get('question_type', '')
         
-        if question_type == 'multiple_choice':
-            correct_index = question.get('correct_answer', '0')
+        if question_type in ['multiple_choice', 'concept_multiple_choice', 'scenario_multiple_choice']:
+            correct_answer = question.get('correct_answer', '')
             options = question.get('options', [])
-            if isinstance(options, str):
-                try:
-                    options = json.loads(options)
-                except json.JSONDecodeError:
-                    options = []
             
-            try:
-                index = int(correct_index)
-                if 0 <= index < len(options):
-                    return options[index]
-            except (ValueError, IndexError):
-                pass
-            return f"Option {correct_index}"
+            # If correct_answer is a number (index), get the option text
+            if isinstance(correct_answer, (int, str)) and str(correct_answer).isdigit():
+                try:
+                    index = int(correct_answer)
+                    if 0 <= index < len(options):
+                        return options[index]
+                except (ValueError, IndexError):
+                    pass
+                return f"Option {correct_answer}"
+            else:
+                # If correct_answer is text, return it directly
+                return str(correct_answer)
         
         elif question_type == 'true_false':
             return str(question.get('correct_answer', 'True'))
         
-        elif question_type == 'fill_in_blank':
+        elif question_type in ['fill_in_blank', 'fill_in_the_blank']:
             correct_answers = question.get('correct_answers', [])
+            if not correct_answers:
+                correct_answers = [question.get('correct_answer', '')]
+            
             if isinstance(correct_answers, str):
                 try:
                     correct_answers = json.loads(correct_answers)
                 except json.JSONDecodeError:
                     correct_answers = [correct_answers]
             
-            if correct_answers:
-                return correct_answers[0]  # Return first correct answer
+            if correct_answers and correct_answers[0]:
+                return str(correct_answers[0])  # Return first correct answer
             return str(question.get('correct_answer', ''))
         
         return str(question.get('correct_answer', ''))

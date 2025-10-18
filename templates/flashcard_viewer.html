@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}{{ section_title }} - Security+ Flashcards{% endblock %}
+
+{% block content %}
+<div class="flashcard-viewer-container" 
+     data-session-id="{{ session_id }}"
+     data-current-card="{{ current_card_number }}"
+     data-total-cards="{{ total_cards }}"
+     data-section-title="{{ section_title }}"
+     data-front="{{ current_flashcard.front|e }}"
+     data-back="{{ current_flashcard.back|e }}"
+     data-category="{{ current_flashcard.category }}"
+     data-difficulty="{{ current_flashcard.difficulty }}">
+    <div class="flashcard-viewer-header">
+        <div class="container">
+            <div class="viewer-header-content">
+                <div class="viewer-breadcrumb">
+                    <a href="{{ url_for('flashcards') }}">Flashcards</a>
+                    <i class="fas fa-chevron-right"></i>
+                    <span>{{ section_title }}</span>
+                </div>
+                <h1>{{ section_title }}</h1>
+                <div class="viewer-controls">
+                    <div class="card-counter">
+                        <span class="current-card">{{ current_card_number }}</span>
+                        <span class="separator">of</span>
+                        <span class="total-cards">{{ total_cards }}</span>
+                    </div>
+                    <div class="view-mode-toggle">
+                        <button class="mode-btn active" data-mode="single" id="single-mode-btn">
+                            <i class="fas fa-layer-group"></i>
+                            Single Card
+                        </button>
+                        <button class="mode-btn" data-mode="scroll" id="scroll-mode-btn">
+                            <i class="fas fa-list"></i>
+                            Scroll View
+                        </button>
+                    </div>
+                    <a href="{{ url_for('flashcards') }}" class="btn btn-outline">
+                        <i class="fas fa-arrow-left"></i>
+                        Back to Sections
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="flashcard-viewer-main">
+        <div class="container">
+            <!-- Single Card Mode -->
+            <div class="single-card-mode" id="single-card-mode">
+                <div class="flashcard-wrapper">
+                    <div class="flashcard" id="main-flashcard">
+                        <div class="flashcard-content">
+                            <div class="flashcard-side front">
+                                <div class="card-header">
+                                    <span class="card-category">{{ current_flashcard.category }}</span>
+                                    <span class="card-type">Question</span>
+                                </div>
+                                <div class="card-body">
+                                    <h2 class="card-title" id="card-front-text">{{ current_flashcard.front }}</h2>
+                                    <div class="card-hint">
+                                        <i class="fas fa-lightbulb"></i>
+                                        <span>Click to reveal answer</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="flashcard-side back">
+                                <div class="card-header">
+                                    <span class="card-category">{{ current_flashcard.category }}</span>
+                                    <span class="card-type">Answer</span>
+                                </div>
+                                <div class="card-body">
+                                    <div class="card-answer" id="card-back-text">{{ current_flashcard.back }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flashcard-actions">
+                    <button class="action-btn prev-btn" id="prev-btn" disabled>
+                        <i class="fas fa-chevron-left"></i>
+                        Previous
+                    </button>
+                    
+                    <button class="action-btn flip-btn" id="flip-btn">
+                        <i class="fas fa-sync-alt"></i>
+                        Flip Card
+                    </button>
+                    
+                    <button class="action-btn next-btn" id="next-btn">
+                        Next
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+
+                <div class="keyboard-hints">
+                    <p><i class="fas fa-keyboard"></i> Use arrow keys to navigate, spacebar to flip</p>
+                </div>
+            </div>
+
+            <!-- Scroll Mode -->
+            <div class="scroll-mode" id="scroll-mode" style="display: none;">
+                <div class="scroll-header">
+                    <h3>All Flashcards</h3>
+                    <p>Click any card to flip it</p>
+                </div>
+                
+                <!-- Pagination Controls -->
+                <div class="pagination-controls" id="pagination-controls" style="display: none;">
+                    <!-- Pagination buttons will be loaded dynamically -->
+                </div>
+                
+                <div class="flashcards-list" id="flashcards-list">
+                    <!-- Cards will be loaded dynamically -->
+                </div>
+                
+                <!-- Bottom Pagination Controls -->
+                <div class="pagination-controls pagination-bottom" id="pagination-controls-bottom" style="display: none;">
+                    <!-- Pagination buttons will be loaded dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/flashcard.js') }}?v={{ range(1000, 9999) | random }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get data from container attributes
+    const container = document.querySelector('.flashcard-viewer-container');
+    const sessionId = container.dataset.sessionId;
+    const currentCard = parseInt(container.dataset.currentCard);
+    const totalCards = parseInt(container.dataset.totalCards);
+    const sectionTitle = container.dataset.sectionTitle;
+    
+    // Initialize flashcard manager
+    const flashcardManager = new FlashcardManager({
+        sessionId: sessionId,
+        currentCard: currentCard,
+        totalCards: totalCards,
+        sectionTitle: sectionTitle,
+        initialCard: {
+            front: container.dataset.front,
+            back: container.dataset.back,
+            category: container.dataset.category,
+            difficulty: container.dataset.difficulty,
+            // Ensure header counter shows "current of total" on initial render
+            card_number: currentCard,
+            total_cards: totalCards
+        }
+    });
+    
+    flashcardManager.init();
+});
+</script>
+{% endblock %}

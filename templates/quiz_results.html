@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Quiz Results - Security+ Exam Prep{% endblock %}
+{% block title %}{% if 'practice_test' in results.quiz_id %}Practice Test Results{% else %}Quiz Results{% endif %} - Security+ Exam Prep{% endblock %}
 
 {% block content %}
 <div class="quiz-results-container">
@@ -10,9 +10,9 @@
                 <div class="results-breadcrumb">
                     <a href="{{ url_for('quizzes') }}">Quizzes</a>
                     <i class="fas fa-chevron-right"></i>
-                    <span>Quiz Results</span>
+                    <span>{% if 'practice_test' in results.quiz_id %}Practice Test Results{% else %}Quiz Results{% endif %}</span>
                 </div>
-                <h1>Quiz Results</h1>
+                <h1>{% if 'practice_test' in results.quiz_id %}Practice Test Results{% else %}Quiz Results{% endif %}</h1>
                 <div class="quiz-info">
                     <span class="quiz-type">{{ results.quiz_type.replace('_', ' ').title() }}</span>
                     {% if results.chapter %}

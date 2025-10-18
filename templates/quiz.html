@@ -7,15 +7,9 @@
     <div class="quiz-header">
         <div class="container">
             <div class="quiz-header-content">
-                <div class="quiz-breadcrumb">
-                    <a href="{{ url_for('quizzes') }}">Quizzes</a>
-                    <i class="fas fa-chevron-right"></i>
-                    <span>{{ quiz_title }}</span>
-                </div>
                 <h1>{{ quiz_title }}</h1>
                 <div class="quiz-info">
                     <span class="quiz-type">{{ quiz_type }}</span>
-                    <span class="quiz-difficulty {{ current_question.difficulty.lower() }}">{{ current_question.difficulty }}</span>
                 </div>
             </div>
         </div>
@@ -25,26 +19,45 @@
         <div class="container">
             <div class="quiz-progress">
                 <div class="progress-bar">
-                    <div class="progress-fill" style="width: {{ progress_percentage }}%"></div>
+                    <div class="progress-fill" data-progress="{{ progress_percentage }}"></div>
                 </div>
-                <div class="progress-text">
-                    <span class="current-question">{{ current_question_number }}</span>
-                    <span class="separator">of</span>
-                    <span class="total-questions">{{ total_questions }}</span>
+                <div class="progress-info">
+                    <div class="progress-text">
+                        <span class="current-question">{{ current_question_number }}</span>
+                        <span class="separator">of</span>
+                        <span class="total-questions">{{ total_questions }}</span>
+                    </div>
+                    <div class="timer-display" id="timer-display" style="display: none;">
+                        <i class="fas fa-clock"></i>
+                        <span id="timer-text">90:00</span>
+                    </div>
                 </div>
             </div>
 
             <div class="question-container">
                 <div class="question-header">
                     <span class="question-type">{{ current_question.question_type.replace('_', ' ').title() }}</span>
-                    <span class="question-difficulty {{ current_question.difficulty.lower() }}">{{ current_question.difficulty }}</span>
                 </div>
                 
                 <div class="question-text">
                     <h3>{{ current_question.question_text }}</h3>
+                    {% if current_question.get('explanation') %}
+                    <div class="question-hint" id="hint-container" style="display: none;">
+                        <div class="hint-header">
+                            <i class="fas fa-lightbulb"></i> Hint / Explanation
+                        </div>
+                        <div class="hint-content">
+                            {{ current_question.explanation }}
+                        </div>
+                    </div>
+                    <button type="button" class="btn-hint" id="show-hint-btn">
+                        <i class="fas fa-lightbulb"></i> Show Hint
+                    </button>
+                    {% endif %}
                 </div>
                 
-                {% if current_question.question_type == 'multiple_choice' %}
+                <form id="quizForm" action="{{ url_for('submit_quiz_answer', quiz_id=quiz_id) }}" method="POST">
+                {% if current_question.question_type in ['multiple_choice', 'concept_multiple_choice', 'scenario_multiple_choice'] %}
                 <div class="question-options">
                     {% for option in current_question.options %}
                     <label class="option-item">
@@ -67,22 +80,40 @@
                         <span class="option-text">False</span>
                     </label>
                 </div>
-                {% elif current_question.question_type == 'fill_in_blank' %}
+                {% elif current_question.question_type in ['fill_in_blank', 'fill_in_the_blank'] %}
                 <div class="question-input">
                     <input type="text" name="answer" placeholder="Enter your answer..." required>
+                </div>
+                {% else %}
+                <!-- Default to multiple choice if type not recognized -->
+                <div class="question-options">
+                    {% for option in current_question.options %}
+                    <label class="option-item">
+                        <input type="radio" name="answer" value="{{ loop.index0 }}" required>
+                        <span class="option-letter">{{ loop.index0|string|replace('0', 'A')|replace('1', 'B')|replace('2', 'C')|replace('3', 'D') }}</span>
+                        <span class="option-text">{{ option }}</span>
+                    </label>
+                    {% endfor %}
                 </div>
                 {% endif %}
             </div>
 
             <div class="quiz-actions">
-                <button class="btn btn-outline" id="skipQuestion">
+                {% if current_question_number > 1 %}
+                <a href="{{ url_for('quiz_question', quiz_id=quiz_id, question_number=current_question_number - 1) }}" class="btn btn-outline">
+                    <i class="fas fa-arrow-left"></i>
+                    Previous
+                </a>
+                {% endif %}
+                <button class="btn btn-outline" id="skipQuestion" type="submit" name="answer" value="skip" formnovalidate>
                     <i class="fas fa-forward"></i>
                     Skip
                 </button>
-                <button class="btn btn-primary" id="submitAnswer" disabled>
+                <button class="btn btn-primary" id="submitAnswer" type="submit" disabled>
                     Submit Answer
                 </button>
             </div>
+            </form>
 
             <!-- Explanation (shown after answer submission) -->
             {% if show_explanation %}
@@ -118,27 +149,237 @@
     </div>
 </div>
 
+<style>
+.quiz-progress {
+    margin-bottom: 30px;
+}
+
+.progress-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+}
+
+.timer-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 25px;
+    font-weight: 600;
+    font-size: 1.1rem;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.timer-display.warning {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.quiz-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+.quiz-actions .btn {
+    flex-shrink: 0;
+}
+
+.question-hint {
+    background: #fff3cd;
+    border: 2px solid #ffc107;
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 16px;
+    margin-bottom: 16px;
+}
+
+.hint-header {
+    color: #856404;
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.hint-content {
+    color: #856404;
+    line-height: 1.6;
+}
+
+.btn-hint {
+    background: #ffc107;
+    color: #856404;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 12px;
+    transition: all 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-hint:hover {
+    background: #ffca2c;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 193, 7, 0.4);
+}
+
+.btn-hint i {
+    font-size: 1.1rem;
+}
+</style>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const submitBtn = document.getElementById('submitAnswer');
-    const skipBtn = document.getElementById('skipQuestion');
-    const nextBtn = document.getElementById('nextQuestion');
-    const answerInputs = document.querySelectorAll('input[name="answer"]');
-    const answerText = document.querySelector('input[type="text"]');
+    const answerInputs = document.querySelectorAll('input[name="answer"][type="radio"]');
+    const answerText = document.querySelector('input[name="answer"][type="text"]');
+    const progressFill = document.querySelector('.progress-fill');
+    const quizId = '{{ quiz_id }}';
+    const questionNumber = {{ current_question_number }};
+    
+    if (progressFill && progressFill.dataset.progress) {
+        progressFill.style.width = progressFill.dataset.progress + '%';
+    }
+    
+    // Hint functionality
+    const showHintBtn = document.getElementById('show-hint-btn');
+    const hintContainer = document.getElementById('hint-container');
+    if (showHintBtn && hintContainer) {
+        showHintBtn.addEventListener('click', function() {
+            hintContainer.style.display = 'block';
+            showHintBtn.style.display = 'none';
+        });
+    }
+    
+    // Answer persistence - save answers to sessionStorage
+    function saveAnswer(answer) {
+        const storageKey = `quiz_${quizId}_answers`;
+        let answers = {};
+        try {
+            const stored = sessionStorage.getItem(storageKey);
+            if (stored) answers = JSON.parse(stored);
+        } catch (e) {
+            console.error('Error loading saved answers:', e);
+        }
+        answers[questionNumber] = answer;
+        sessionStorage.setItem(storageKey, JSON.stringify(answers));
+    }
+    
+    function loadSavedAnswer() {
+        const storageKey = `quiz_${quizId}_answers`;
+        try {
+            const stored = sessionStorage.getItem(storageKey);
+            if (stored) {
+                const answers = JSON.parse(stored);
+                const savedAnswer = answers[questionNumber];
+                if (savedAnswer !== undefined && savedAnswer !== null) {
+                    // Restore the answer
+                    if (answerText && typeof savedAnswer === 'string') {
+                        answerText.value = savedAnswer;
+                    } else if (answerInputs.length > 0) {
+                        answerInputs.forEach(input => {
+                            if (input.value == savedAnswer) {
+                                input.checked = true;
+                            }
+                        });
+                    }
+                }
+            }
+        } catch (e) {
+            console.error('Error loading saved answer:', e);
+        }
+    }
+    
+    // Load saved answer on page load
+    loadSavedAnswer();
+    
+    // Timer functionality
+    const timerDisplay = document.getElementById('timer-display');
+    const timerText = document.getElementById('timer-text');
+    const urlParams = new URLSearchParams(window.location.search);
+    const showTimer = urlParams.get('timer') === 'true';
+    const timeLimit = parseInt(urlParams.get('time_limit') || '5400'); // Default 90 minutes in seconds
+    
+    if (showTimer && timerDisplay) {
+        timerDisplay.style.display = 'flex';
+        let remainingTime = timeLimit;
+        
+        // Check if we have a saved time in sessionStorage
+        const savedTime = sessionStorage.getItem('quiz_timer');
+        const savedTimestamp = sessionStorage.getItem('quiz_timer_start');
+        if (savedTime && savedTimestamp) {
+            const elapsed = Math.floor((Date.now() - parseInt(savedTimestamp)) / 1000);
+            remainingTime = Math.max(0, parseInt(savedTime) - elapsed);
+        } else {
+            sessionStorage.setItem('quiz_timer', timeLimit.toString());
+            sessionStorage.setItem('quiz_timer_start', Date.now().toString());
+        }
+        
+        function updateTimer() {
+            const minutes = Math.floor(remainingTime / 60);
+            const seconds = remainingTime % 60;
+            timerText.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            
+            // Warning color when under 10 minutes
+            if (remainingTime < 600) {
+                timerDisplay.classList.add('warning');
+            }
+            
+            if (remainingTime <= 0) {
+                alert('Time is up! Submitting your test...');
+                window.location.href = '/quiz/{{ quiz_id }}/results';
+                return;
+            }
+            
+            remainingTime--;
+            sessionStorage.setItem('quiz_timer', remainingTime.toString());
+            sessionStorage.setItem('quiz_timer_start', Date.now().toString());
+        }
+        
+        updateTimer();
+        const timerInterval = setInterval(updateTimer, 1000);
+    }
     
     // Enable submit button when answer is selected
     function checkAnswerSelected() {
         let hasAnswer = false;
+        let selectedAnswer = null;
         
         if (answerText) {
             hasAnswer = answerText.value.trim() !== '';
+            selectedAnswer = answerText.value.trim();
         } else {
             answerInputs.forEach(input => {
-                if (input.checked) hasAnswer = true;
+                if (input.checked) {
+                    hasAnswer = true;
+                    selectedAnswer = input.value;
+                }
             });
         }
         
         submitBtn.disabled = !hasAnswer;
+        
+        // Save answer when selected
+        if (hasAnswer && selectedAnswer !== null) {
+            saveAnswer(selectedAnswer);
+        }
     }
     
     // Add event listeners
@@ -150,60 +391,7 @@ document.addEventListener('DOMContentLoaded', function() {
         answerText.addEventListener('input', checkAnswerSelected);
     }
     
-    // Submit answer
-    submitBtn.addEventListener('click', function() {
-        let answer = '';
-        
-        if (answerText) {
-            answer = answerText.value.trim();
-        } else {
-            const selectedInput = document.querySelector('input[name="answer"]:checked');
-            if (selectedInput) {
-                answer = selectedInput.value;
-            }
-        }
-        
-        if (answer) {
-            // Submit the answer
-            submitAnswer(answer);
-        }
-    });
-    
-    // Skip question
-    skipBtn.addEventListener('click', function() {
-        submitAnswer('skip');
-    });
-    
-    // Next question
-    if (nextBtn) {
-        nextBtn.addEventListener('click', function() {
-            window.location.href = '{{ next_question_url }}';
-        });
-    }
-    
-    function submitAnswer(answer) {
-        // Create form data
-        const formData = new FormData();
-        formData.append('answer', answer);
-        
-        // Submit to server
-        fetch('/quiz/{{ quiz_id }}/submit', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => {
-            if (response.ok) {
-                // Redirect to next question or results
-                window.location.href = response.url;
-            } else {
-                throw new Error('Network response was not ok');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Error submitting answer. Please try again.');
-        });
-    }
+    // Form submission is handled by the browser; Flask returns a redirect
     
     // Initialize
     checkAnswerSelected();
