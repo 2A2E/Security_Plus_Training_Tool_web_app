@@ -13,6 +13,7 @@
                 </div>
             </div>
         </div>
+    
     </div>
 
     <div class="quiz-main">
@@ -252,7 +253,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const answerText = document.querySelector('input[name="answer"][type="text"]');
     const progressFill = document.querySelector('.progress-fill');
     const quizId = '{{ quiz_id }}';
-    const questionNumber = {{ current_question_number }};
+    const questionNumber = parseInt('{{ current_question_number }}', 10);
     
     if (progressFill && progressFill.dataset.progress) {
         progressFill.style.width = progressFill.dataset.progress + '%';
