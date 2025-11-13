@@ -42,63 +42,93 @@
                 
                 <div class="question-text">
                     <h3>{{ current_question.question_text }}</h3>
-                    {% if current_question.get('explanation') %}
-                    <div class="question-hint" id="hint-container" style="display: none;">
-                        <div class="hint-header">
-                            <i class="fas fa-lightbulb"></i> Hint / Explanation
-                        </div>
-                        <div class="hint-content">
-                            {{ current_question.explanation }}
-                        </div>
-                    </div>
-                    <button type="button" class="btn-hint" id="show-hint-btn">
-                        <i class="fas fa-lightbulb"></i> Show Hint
-                    </button>
-                    {% endif %}
                 </div>
                 
                 <form id="quizForm" action="{{ url_for('submit_quiz_answer', quiz_id=quiz_id) }}" method="POST">
                 {% if current_question.question_type in ['multiple_choice', 'concept_multiple_choice', 'scenario_multiple_choice'] %}
                 <div class="question-options">
                     {% for option in current_question.options %}
-                    <label class="option-item">
-                        <input type="radio" name="answer" value="{{ loop.index0 }}" required>
-                        <span class="option-letter">{{ loop.index0|string|replace('0', 'A')|replace('1', 'B')|replace('2', 'C')|replace('3', 'D') }}</span>
+                    {% set option_index = loop.index0 %}
+                    {% set is_user_answer = show_explanation and user_answer|string == option_index|string %}
+                    {% set is_correct_answer = show_explanation and correct_answer_index is not none and correct_answer_index == option_index %}
+                    <label class="option-item {% if show_explanation %}{% if is_correct_answer %}correct-answer{% elif is_user_answer and not is_correct %}incorrect-answer{% endif %}{% endif %}">
+                        <input type="radio" name="answer" value="{{ option_index }}" required {% if show_explanation %}disabled{% endif %}>
+                        <span class="option-letter">{{ option_index|string|replace('0', 'A')|replace('1', 'B')|replace('2', 'C')|replace('3', 'D') }}</span>
                         <span class="option-text">{{ option }}</span>
+                        {% if show_explanation %}
+                            {% if is_correct_answer %}
+                            <span class="answer-indicator correct-indicator"><i class="fas fa-check-circle"></i> Correct</span>
+                            {% elif is_user_answer and not is_correct %}
+                            <span class="answer-indicator incorrect-indicator"><i class="fas fa-times-circle"></i> Your Answer</span>
+                            {% endif %}
+                        {% endif %}
                     </label>
                     {% endfor %}
                 </div>
                 {% elif current_question.question_type == 'true_false' %}
                 <div class="question-options">
-                    <label class="option-item">
-                        <input type="radio" name="answer" value="true" required>
+                    {% set user_ans = user_answer|lower if show_explanation else '' %}
+                    {% set correct_ans = correct_answer|lower if show_explanation else '' %}
+                    <label class="option-item {% if show_explanation %}{% if correct_ans == 'true' %}correct-answer{% elif user_ans == 'true' and not is_correct %}incorrect-answer{% endif %}{% endif %}">
+                        <input type="radio" name="answer" value="true" required {% if show_explanation %}disabled{% endif %}>
                         <span class="option-letter">A</span>
                         <span class="option-text">True</span>
+                        {% if show_explanation %}
+                            {% if correct_ans == 'true' %}
+                            <span class="answer-indicator correct-indicator"><i class="fas fa-check-circle"></i> Correct</span>
+                            {% elif user_ans == 'true' and not is_correct %}
+                            <span class="answer-indicator incorrect-indicator"><i class="fas fa-times-circle"></i> Your Answer</span>
+                            {% endif %}
+                        {% endif %}
                     </label>
-                    <label class="option-item">
-                        <input type="radio" name="answer" value="false" required>
+                    <label class="option-item {% if show_explanation %}{% if correct_ans == 'false' %}correct-answer{% elif user_ans == 'false' and not is_correct %}incorrect-answer{% endif %}{% endif %}">
+                        <input type="radio" name="answer" value="false" required {% if show_explanation %}disabled{% endif %}>
                         <span class="option-letter">B</span>
                         <span class="option-text">False</span>
+                        {% if show_explanation %}
+                            {% if correct_ans == 'false' %}
+                            <span class="answer-indicator correct-indicator"><i class="fas fa-check-circle"></i> Correct</span>
+                            {% elif user_ans == 'false' and not is_correct %}
+                            <span class="answer-indicator incorrect-indicator"><i class="fas fa-times-circle"></i> Your Answer</span>
+                            {% endif %}
+                        {% endif %}
                     </label>
                 </div>
                 {% elif current_question.question_type in ['fill_in_blank', 'fill_in_the_blank'] %}
                 <div class="question-input">
-                    <input type="text" name="answer" placeholder="Enter your answer..." required>
+                    <input type="text" name="answer" placeholder="Enter your answer..." required {% if show_explanation %}disabled value="{{ user_answer }}"{% endif %}>
+                    {% if show_explanation %}
+                    <div class="fill-answer-feedback">
+                        <p><strong>Your answer:</strong> {{ user_answer }}</p>
+                        <p><strong>Correct answer:</strong> {{ correct_answer }}</p>
+                    </div>
+                    {% endif %}
                 </div>
                 {% else %}
                 <!-- Default to multiple choice if type not recognized -->
                 <div class="question-options">
                     {% for option in current_question.options %}
-                    <label class="option-item">
-                        <input type="radio" name="answer" value="{{ loop.index0 }}" required>
-                        <span class="option-letter">{{ loop.index0|string|replace('0', 'A')|replace('1', 'B')|replace('2', 'C')|replace('3', 'D') }}</span>
+                    {% set option_index = loop.index0 %}
+                    {% set is_user_answer = show_explanation and user_answer|string == option_index|string %}
+                    {% set is_correct_answer = show_explanation and correct_answer_index is not none and correct_answer_index == option_index %}
+                    <label class="option-item {% if show_explanation %}{% if is_correct_answer %}correct-answer{% elif is_user_answer and not is_correct %}incorrect-answer{% endif %}{% endif %}">
+                        <input type="radio" name="answer" value="{{ option_index }}" required {% if show_explanation %}disabled{% endif %}>
+                        <span class="option-letter">{{ option_index|string|replace('0', 'A')|replace('1', 'B')|replace('2', 'C')|replace('3', 'D') }}</span>
                         <span class="option-text">{{ option }}</span>
+                        {% if show_explanation %}
+                            {% if is_correct_answer %}
+                            <span class="answer-indicator correct-indicator"><i class="fas fa-check-circle"></i> Correct</span>
+                            {% elif is_user_answer and not is_correct %}
+                            <span class="answer-indicator incorrect-indicator"><i class="fas fa-times-circle"></i> Your Answer</span>
+                            {% endif %}
+                        {% endif %}
                     </label>
                     {% endfor %}
                 </div>
                 {% endif %}
             </div>
 
+            {% if not show_explanation %}
             <div class="quiz-actions">
                 {% if current_question_number > 1 %}
                 <a href="{{ url_for('quiz_question', quiz_id=quiz_id, question_number=current_question_number - 1) }}" class="btn btn-outline">
@@ -114,6 +144,7 @@
                     Submit Answer
                 </button>
             </div>
+            {% endif %}
             </form>
 
             <!-- Explanation (shown after answer submission) -->
@@ -131,18 +162,22 @@
                     </h4>
                 </div>
                 <div class="explanation-content">
-                    <p><strong>Your answer:</strong> {{ user_answer }}</p>
-                    <p><strong>Correct answer:</strong> {{ correct_answer }}</p>
+                    {% if explanation %}
+                    <p><strong>Explanation:</strong> {{ explanation }}</p>
+                    {% elif current_question.get('explanation') %}
                     <p><strong>Explanation:</strong> {{ current_question.explanation }}</p>
+                    {% endif %}
                 </div>
                 <div class="explanation-actions">
-                    <button class="btn btn-primary" id="nextQuestion">
-                        {% if current_question_number < total_questions %}
+                    {% if current_question_number < total_questions %}
+                    <a href="{{ url_for('quiz_question', quiz_id=quiz_id, question_number=current_question_number + 1) }}" class="btn btn-primary" id="nextQuestion">
                         Next Question
-                        {% else %}
+                    </a>
+                    {% else %}
+                    <a href="{{ url_for('quiz_results', quiz_id=quiz_id) }}" class="btn btn-primary" id="viewResults">
                         View Results
-                        {% endif %}
-                    </button>
+                    </a>
+                    {% endif %}
                 </div>
             </div>
             {% endif %}
@@ -196,53 +231,79 @@
     flex-shrink: 0;
 }
 
-.question-hint {
-    background: #fff3cd;
-    border: 2px solid #ffc107;
-    border-radius: 12px;
-    padding: 16px;
-    margin-top: 16px;
-    margin-bottom: 16px;
+.option-item.correct-answer {
+    background: #d4edda;
+    border: 2px solid #28a745;
+    border-radius: 8px;
 }
 
-.hint-header {
-    color: #856404;
+.option-item.incorrect-answer {
+    background: #f8d7da;
+    border: 2px solid #dc3545;
+    border-radius: 8px;
+}
+
+.answer-indicator {
+    margin-left: auto;
     font-weight: 600;
-    font-size: 1rem;
-    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.correct-indicator {
+    color: #28a745;
+}
+
+.incorrect-indicator {
+    color: #dc3545;
+}
+
+.fill-answer-feedback {
+    margin-top: 12px;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #007bff;
+}
+
+.explanation-container {
+    margin-top: 24px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    border: 2px solid #dee2e6;
+}
+
+.explanation-header h4 {
+    margin: 0 0 16px 0;
     display: flex;
     align-items: center;
     gap: 8px;
+    font-size: 1.25rem;
 }
 
-.hint-content {
-    color: #856404;
+.explanation-header .correct {
+    color: #28a745;
+}
+
+.explanation-header .incorrect {
+    color: #dc3545;
+}
+
+.explanation-content {
+    margin-bottom: 20px;
     line-height: 1.6;
+    color: #333;
 }
 
-.btn-hint {
-    background: #ffc107;
-    color: #856404;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 8px;
-    font-weight: 600;
-    cursor: pointer;
-    margin-top: 12px;
-    transition: all 0.3s;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
+.explanation-content p {
+    margin: 8px 0;
 }
 
-.btn-hint:hover {
-    background: #ffca2c;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(255, 193, 7, 0.4);
-}
-
-.btn-hint i {
-    font-size: 1.1rem;
+.explanation-actions {
+    display: flex;
+    justify-content: flex-end;
 }
 </style>
 
@@ -257,16 +318,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (progressFill && progressFill.dataset.progress) {
         progressFill.style.width = progressFill.dataset.progress + '%';
-    }
-    
-    // Hint functionality
-    const showHintBtn = document.getElementById('show-hint-btn');
-    const hintContainer = document.getElementById('hint-container');
-    if (showHintBtn && hintContainer) {
-        showHintBtn.addEventListener('click', function() {
-            hintContainer.style.display = 'block';
-            showHintBtn.style.display = 'none';
-        });
     }
     
     // Answer persistence - save answers to sessionStorage
@@ -310,6 +361,20 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Load saved answer on page load
     loadSavedAnswer();
+    
+    // If showing explanation, pre-select the user's answer
+    {% if show_explanation %}
+    const userAnswer = '{{ user_answer }}';
+    if (answerText) {
+        answerText.value = userAnswer;
+    } else if (answerInputs.length > 0) {
+        answerInputs.forEach(input => {
+            if (input.value == userAnswer) {
+                input.checked = true;
+            }
+        });
+    }
+    {% endif %}
     
     // Timer functionality
     const timerDisplay = document.getElementById('timer-display');

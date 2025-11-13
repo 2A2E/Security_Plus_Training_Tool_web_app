@@ -4,6 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Security+ Exam Prep - CompTIA Security+ SY0-701{% endblock %}</title>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-3CPMTGE84R"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', 'G-3CPMTGE84R');
+    </script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
@@ -36,6 +45,12 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a href="#" class="nav-link" onclick="showComingSoon()">
+                        <i class="fas fa-gamepad"></i>
+                        Mini Games
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a href="{{ url_for('practice_test') }}" class="nav-link">
                         <i class="fas fa-clock"></i>
                         Practice Tests
@@ -54,13 +69,24 @@
                 </li>
                 <li class="nav-item dropdown">
                     <a href="#" class="nav-link dropdown-toggle">
-                        Account <i class="fas fa-chevron-down"></i>
+                        {% if is_authenticated %}
+                            <i class="fas fa-user-circle"></i>
+                            {{ user_email.split('@')[0] if user_email else 'Account' }}
+                        {% else %}
+                            Account
+                        {% endif %}
+                        <i class="fas fa-chevron-down"></i>
                     </a>
                     <ul class="dropdown-menu">
-                        <li><a href="{{ url_for('login') }}">Login</a></li>
-                        <li><a href="{{ url_for('register') }}">Register</a></li>
-                        <li><a href="#" onclick="showComingSoon()">Dashboard</a></li>
-                        <li><a href="#" onclick="showComingSoon()">Profile</a></li>
+                        {% if is_authenticated %}
+                            <li><a href="{{ url_for('profile') }}"><i class="fas fa-user"></i> Profile</a></li>
+                            <li><a href="{{ url_for('dashboard') }}"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+                            <li><hr style="margin: 0.5rem 0; border: none; border-top: 1px solid #e0e0e0;"></li>
+                            <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                        {% else %}
+                            <li><a href="{{ url_for('login') }}"><i class="fas fa-sign-in-alt"></i> Login</a></li>
+                            <li><a href="{{ url_for('register') }}"><i class="fas fa-user-plus"></i> Register</a></li>
+                        {% endif %}
                     </ul>
                 </li>
             </ul>
@@ -103,9 +129,12 @@
                 </ul>
             </div>
             <div class="footer-section">
-                <h4>Contact Info</h4>
-                <p><i class="fas fa-envelope"></i> info@securityplus.com</p>
-                <p><i class="fas fa-phone"></i> +1 (555) 123-4567</p>
+                <h4>Resources</h4>
+                <ul>
+                    <li><a href="{{ url_for('flashcards') }}">Flashcards</a></li>
+                    <li><a href="{{ url_for('quizzes') }}">Quizzes</a></li>
+                    <li><a href="{{ url_for('practice_test') }}">Practice Tests</a></li>
+                </ul>
             </div>
         </div>
         <div class="footer-bottom">

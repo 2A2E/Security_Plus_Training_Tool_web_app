@@ -1,0 +1,601 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Security Plus Training Tool{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div class="container">
+        <h1>Dashboard</h1>
+        <p>Track your learning progress and performance</p>
+    </div>
+</section>
+
+<section class="dashboard-content">
+    <div class="container">
+        <!-- Statistics Cards -->
+        <div class="dashboard-stats">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-question-circle"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-number">{{ statistics.total_quizzes or 0 }}</div>
+                    <div class="stat-label">Quizzes Completed</div>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-layer-group"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-number">{{ statistics.total_flashcards or 0 }}</div>
+                    <div class="stat-label">Flashcards Viewed</div>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-number">{{ statistics.total_practice_tests or 0 }}</div>
+                    <div class="stat-label">Practice Tests</div>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-trophy"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-number">{{ statistics.average_score or 0 }}%</div>
+                    <div class="stat-label">Average Score</div>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-hourglass-half"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-number">{{ statistics.total_study_time_hours or 0 }}</div>
+                    <div class="stat-label">Hours Studied</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="dashboard-grid">
+            <!-- Recent Activity -->
+            <div class="dashboard-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-history"></i> Recent Quiz Results</h2>
+                </div>
+                <div class="section-content">
+                    {% if recent_quizzes %}
+                        <div class="quiz-history-table">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Type</th>
+                                        <th>Section</th>
+                                        <th>Score</th>
+                                        <th>Duration</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for quiz in recent_quizzes %}
+                                    <tr>
+                                        <td>
+                                            {% if quiz.completed_at %}
+                                                {{ quiz.completed_at[:10] }}
+                                            {% else %}
+                                                N/A
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if quiz.quiz_type == 'practice_test' %}
+                                                <span class="badge badge-primary">Practice Test</span>
+                                            {% elif quiz.quiz_type == 'section_quiz' %}
+                                                <span class="badge badge-secondary">Section Quiz</span>
+                                            {% elif quiz.quiz_type == 'random_quiz' %}
+                                                <span class="badge badge-info">Random Quiz</span>
+                                            {% else %}
+                                                {{ quiz.quiz_type|title }}
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if quiz.section %}
+                                                Section {{ quiz.section }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="score-badge score-{{ 'good' if quiz.percentage >= 70 else 'fair' if quiz.percentage >= 50 else 'poor' }}">
+                                                {{ quiz.percentage }}%
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if quiz.duration_seconds %}
+                                                {{ (quiz.duration_seconds / 60)|round(1) }} min
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            <p>No quiz results yet. Start practicing to see your progress here!</p>
+                            <a href="{{ url_for('quizzes') }}" class="btn btn-primary">Start Quiz</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Section Progress -->
+            <div class="dashboard-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-chart-bar"></i> Section Progress</h2>
+                </div>
+                <div class="section-content">
+                    {% if section_progress %}
+                        {% for section_num in range(1, 6) %}
+                            {% set progress = section_progress.get(section_num, {}) %}
+                            <div class="section-progress-item">
+                                <div class="section-header-row">
+                                    <h3>Section {{ section_num }}: {{ section_names[section_num] }}</h3>
+                                    <span class="section-stats">
+                                        {{ progress.get('quizzes_completed', 0) }} quizzes
+                                    </span>
+                                </div>
+                                <div class="progress-bar-container">
+                                    <div class="progress-bar">
+                                        {% set progress_percent = (progress.get('average_score', 0) / 100 * 100) %}
+                                        <div class="progress-fill" style="width: {{ progress_percent }}%; background: {{ 'linear-gradient(90deg, #10b981, #059669)' if progress_percent >= 70 else 'linear-gradient(90deg, #f59e0b, #d97706)' if progress_percent >= 50 else 'linear-gradient(90deg, #ef4444, #dc2626)' }}"></div>
+                                    </div>
+                                    <div class="progress-info">
+                                        <span class="progress-score">{{ progress.get('average_score', 0) }}%</span>
+                                        <span class="progress-details">{{ progress.get('flashcards_viewed', 0) }} flashcards viewed</span>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-chart-line"></i>
+                            <p>Complete quizzes to see your section progress!</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Performance Trends -->
+            {% if performance_trends %}
+            <div class="dashboard-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-line-chart"></i> Performance Trends (Last 30 Days)</h2>
+                </div>
+                <div class="section-content">
+                    <div class="performance-trends">
+                        {% for trend in performance_trends[-10:] %}
+                        <div class="trend-item">
+                            <div class="trend-date">
+                                {% if trend.completed_at %}
+                                    {{ trend.completed_at[:10] }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </div>
+                            <div class="trend-bar">
+                                <div class="trend-fill" style="width: {{ trend.percentage }}%; background: {{ 'linear-gradient(90deg, #10b981, #059669)' if trend.percentage >= 70 else 'linear-gradient(90deg, #f59e0b, #d97706)' if trend.percentage >= 50 else 'linear-gradient(90deg, #ef4444, #dc2626)' }}"></div>
+                            </div>
+                            <div class="trend-score">{{ trend.percentage }}%</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Quick Actions -->
+            <div class="dashboard-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-bolt"></i> Quick Actions</h2>
+                </div>
+                <div class="section-content">
+                    <div class="quick-actions">
+                        <a href="{{ url_for('quizzes') }}" class="quick-action-btn">
+                            <i class="fas fa-question-circle"></i>
+                            <span>Take Quiz</span>
+                        </a>
+                        <a href="{{ url_for('flashcards') }}" class="quick-action-btn">
+                            <i class="fas fa-layer-group"></i>
+                            <span>Study Flashcards</span>
+                        </a>
+                        <a href="{{ url_for('quiz_practice_test') }}" class="quick-action-btn">
+                            <i class="fas fa-clock"></i>
+                            <span>Practice Test</span>
+                        </a>
+                        <a href="{{ url_for('profile') }}" class="quick-action-btn">
+                            <i class="fas fa-user"></i>
+                            <span>Edit Profile</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+.dashboard-content {
+    padding: 2rem 0;
+}
+
+.dashboard-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem;
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.stat-card .stat-icon {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    color: white;
+    border-radius: 12px;
+    font-size: 1.5rem;
+}
+
+.stat-card .stat-info {
+    flex: 1;
+}
+
+.stat-card .stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #333;
+    line-height: 1.2;
+}
+
+.stat-card .stat-label {
+    font-size: 0.9rem;
+    color: #666;
+    margin-top: 0.25rem;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+}
+
+.dashboard-section {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    overflow: hidden;
+}
+
+.section-header {
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.section-header h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.section-header h2 i {
+    color: #8b5cf6;
+}
+
+.section-content {
+    padding: 1.5rem;
+}
+
+.quiz-history-table {
+    overflow-x: auto;
+}
+
+.quiz-history-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.quiz-history-table th {
+    text-align: left;
+    padding: 0.75rem;
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #666;
+    font-size: 0.9rem;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.quiz-history-table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.quiz-history-table tr:hover {
+    background: #f8f9fa;
+}
+
+.score-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.score-good {
+    background: #10b981;
+    color: white;
+}
+
+.score-fair {
+    background: #f59e0b;
+    color: white;
+}
+
+.score-poor {
+    background: #ef4444;
+    color: white;
+}
+
+.badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.badge-primary {
+    background: #8b5cf6;
+    color: white;
+}
+
+.badge-secondary {
+    background: #6b7280;
+    color: white;
+}
+
+.badge-info {
+    background: #3b82f6;
+    color: white;
+}
+
+.section-progress-item {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.section-progress-item:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.section-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.section-header-row h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: #333;
+}
+
+.section-stats {
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.progress-bar-container {
+    margin-top: 0.5rem;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 24px;
+    background: #e5e7eb;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.progress-fill {
+    height: 100%;
+    border-radius: 12px;
+    transition: width 0.3s ease;
+}
+
+.progress-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.progress-score {
+    font-weight: 600;
+    color: #333;
+}
+
+.performance-trends {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.trend-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.trend-date {
+    width: 100px;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.trend-bar {
+    flex: 1;
+    height: 20px;
+    background: #e5e7eb;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.trend-fill {
+    height: 100%;
+    border-radius: 10px;
+}
+
+.trend-score {
+    width: 60px;
+    text-align: right;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #333;
+}
+
+.quick-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+}
+
+.quick-action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    text-decoration: none;
+    color: #333;
+    transition: all 0.2s;
+}
+
+.quick-action-btn:hover {
+    background: #8b5cf6;
+    color: white;
+    border-color: #8b5cf6;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(139, 92, 246, 0.2);
+}
+
+.quick-action-btn i {
+    font-size: 2rem;
+}
+
+.quick-action-btn span {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #666;
+}
+
+.empty-state i {
+    font-size: 3rem;
+    color: #cbd5e1;
+    margin-bottom: 1rem;
+}
+
+.empty-state p {
+    margin-bottom: 1.5rem;
+    font-size: 1rem;
+}
+
+@media (max-width: 768px) {
+    .dashboard-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .quiz-history-table {
+        font-size: 0.85rem;
+    }
+    
+    .quick-actions {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .section-header-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+    }
+    
+    .trend-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .trend-date {
+        width: 100%;
+    }
+    
+    .trend-score {
+        width: 100%;
+        text-align: left;
+    }
+}
+</style>
+{% endblock %}
+

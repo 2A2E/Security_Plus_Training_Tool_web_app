@@ -131,7 +131,7 @@ export FLASK_DEBUG=True
 - **Adam Cheung (Product & Database)**: Design schema, manage content, keep data accurate
 - **Chenrui Zhang (Backend Logic)**: Build API, quiz session logic, timers, and progress tracking
 - **Edmund Cheung (UI/UX)**: Design study screens, quiz UI, profile dashboards
-- **Aaron (Frontend)**: Implement frontend components, connect to backend, handle user interactions
+- **Aaron Lo(Frontend)**: Implement frontend components, connect to backend, handle user interactions
 
 ## 🏗️ Architecture Benefits
 

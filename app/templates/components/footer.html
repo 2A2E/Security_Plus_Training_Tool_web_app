@@ -29,10 +29,12 @@
             </ul>
         </div>
         <div class="footer-section">
-            <h4>Contact Info</h4>
-            <p><i class="fas fa-envelope"></i> info@securityplus.com</p>
-            <p><i class="fas fa-phone"></i> +1 (555) 123-4567</p>
-            <p><i class="fas fa-map-marker-alt"></i> 123 Security Street, Cybersecurity City</p>
+            <h4>Resources</h4>
+            <ul>
+                <li><a href="{{ url_for('training.beginner') }}">Beginner</a></li>
+                <li><a href="{{ url_for('training.intermediate') }}">Intermediate</a></li>
+                <li><a href="{{ url_for('training.advanced') }}">Advanced</a></li>
+            </ul>
         </div>
     </div>
     <div class="footer-bottom">

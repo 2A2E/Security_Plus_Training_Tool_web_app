@@ -19,17 +19,15 @@
                     <p>Sign in to continue your training</p>
                 </div>
                 
-                <form class="auth-form" method="POST" action="{{ url_for('login') }}">
+                <form class="auth-form" method="POST" action="{{ url_for('login') }}" autocomplete="on">
                     <div class="form-group">
                         <label for="email">Email Address</label>
-                        <input type="email" id="email" name="email" required>
-                        <i class="fas fa-envelope form-icon"></i>
+                        <input type="email" id="email" name="email" autocomplete="email" required>
                     </div>
                     
                     <div class="form-group">
                         <label for="password">Password</label>
-                        <input type="password" id="password" name="password" required>
-                        <i class="fas fa-lock form-icon"></i>
+                        <input type="password" id="password" name="password" autocomplete="current-password" required>
                     </div>
                     
                     <div class="form-options">

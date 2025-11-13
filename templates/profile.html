@@ -1,0 +1,289 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - Security Plus Training Tool{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div class="container">
+        <h1>Your Profile</h1>
+        <p>Manage your account information and track your progress</p>
+    </div>
+</section>
+
+<section class="auth-content">
+    <div class="container">
+        <div class="auth-container">
+            <div class="auth-card" style="max-width: 800px; margin: 0 auto;">
+                <div class="auth-header">
+                    <h2>Account Information</h2>
+                    <p>Your personal details and preferences</p>
+                </div>
+                
+                <div class="profile-content">
+                    <form method="POST" action="{{ url_for('profile') }}" class="profile-form">
+                        <div class="profile-section">
+                            <div class="profile-info-item">
+                                <label><i class="fas fa-user"></i> First Name</label>
+                                <input type="text" name="first_name" value="{{ user_profile.first_name|default('', true) }}" 
+                                       class="profile-input" required>
+                            </div>
+                            
+                            <div class="profile-info-item">
+                                <label><i class="fas fa-user"></i> Last Name</label>
+                                <input type="text" name="last_name" value="{{ user_profile.last_name|default('', true) }}" 
+                                       class="profile-input" required>
+                            </div>
+                            
+                            <div class="profile-info-item">
+                                <label><i class="fas fa-envelope"></i> Email Address</label>
+                                <div class="profile-value" style="background: #e9ecef; cursor: not-allowed;">
+                                    {{ user_profile.email|default('') }} <span style="font-size: 0.85rem; color: #666;">(cannot be changed)</span>
+                                </div>
+                            </div>
+                            
+                            <div class="profile-info-item">
+                                <label><i class="fas fa-chart-line"></i> Experience Level</label>
+                                <select name="experience_level" class="profile-input" required>
+                                    <option value="beginner" {% if user_profile.experience_level == 'beginner' %}selected{% endif %}>
+                                        Beginner (0-1 years)
+                                    </option>
+                                    <option value="intermediate" {% if user_profile.experience_level == 'intermediate' %}selected{% endif %}>
+                                        Intermediate (1-3 years)
+                                    </option>
+                                    <option value="advanced" {% if user_profile.experience_level == 'advanced' %}selected{% endif %}>
+                                        Advanced (3+ years)
+                                    </option>
+                                    <option value="expert" {% if user_profile.experience_level == 'expert' %}selected{% endif %}>
+                                        Expert (5+ years)
+                                    </option>
+                                </select>
+                            </div>
+                            
+                            <div class="profile-info-item">
+                                <label><i class="fas fa-calendar"></i> Member Since</label>
+                                <div class="profile-value">
+                                    {% if user_profile.created_at %}
+                                        {% if user_profile.created_at is string %}
+                                            {{ user_profile.created_at[:10] }}
+                                        {% else %}
+                                            {{ user_profile.created_at.strftime('%Y-%m-%d') if user_profile.created_at.strftime else user_profile.created_at }}
+                                        {% endif %}
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="profile-actions" style="margin-top: 1.5rem;">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i>
+                                    Save Changes
+                                </button>
+                                <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                                    <i class="fas fa-chart-line"></i>
+                                    View Dashboard
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                        
+                    
+                    <div class="profile-stats" style="margin-top: 2rem;">
+                        <h3 style="margin-bottom: 1rem;">Your Progress</h3>
+                        <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                            <div class="stat-card-small">
+                                <div class="stat-icon">
+                                    <i class="fas fa-layer-group"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <div class="stat-number">{{ statistics.total_flashcards or 0 }}</div>
+                                    <div class="stat-label">Flashcards Viewed</div>
+                                </div>
+                            </div>
+                            
+                            <div class="stat-card-small">
+                                <div class="stat-icon">
+                                    <i class="fas fa-question-circle"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <div class="stat-number">{{ statistics.total_quizzes or 0 }}</div>
+                                    <div class="stat-label">Quizzes Completed</div>
+                                </div>
+                            </div>
+                            
+                            <div class="stat-card-small">
+                                <div class="stat-icon">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <div class="stat-number">{{ statistics.total_practice_tests or 0 }}</div>
+                                    <div class="stat-label">Practice Tests</div>
+                                </div>
+                            </div>
+                            
+                            <div class="stat-card-small">
+                                <div class="stat-icon">
+                                    <i class="fas fa-trophy"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <div class="stat-number">{{ statistics.average_score or 0 }}%</div>
+                                    <div class="stat-label">Average Score</div>
+                                </div>
+                            </div>
+                            
+                            <div class="stat-card-small">
+                                <div class="stat-icon">
+                                    <i class="fas fa-hourglass-half"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <div class="stat-number">{{ statistics.total_study_time_hours or 0 }}</div>
+                                    <div class="stat-label">Hours Studied</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+.profile-content {
+    padding: 1rem 0;
+}
+
+.profile-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.profile-info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.profile-info-item label {
+    font-weight: 600;
+    color: #666;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.profile-info-item label i {
+    color: #8b5cf6;
+    width: 20px;
+}
+
+.profile-value {
+    font-size: 1.1rem;
+    color: #333;
+    padding: 0.75rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+}
+
+.profile-input {
+    font-size: 1.1rem;
+    color: #333;
+    padding: 0.75rem;
+    background: #fff;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    width: 100%;
+    font-family: inherit;
+}
+
+.profile-input:focus {
+    outline: none;
+    border-color: #8b5cf6;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.profile-form {
+    width: 100%;
+}
+
+.badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.badge-success {
+    background: #10b981;
+    color: white;
+}
+
+.badge-secondary {
+    background: #6b7280;
+    color: white;
+}
+
+.stat-card-small {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+}
+
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #8b5cf6;
+    color: white;
+    border-radius: 8px;
+    font-size: 1.25rem;
+}
+
+.stat-info {
+    flex: 1;
+}
+
+.stat-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #333;
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    color: #666;
+    margin-top: 0.25rem;
+}
+
+.profile-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+    .profile-actions {
+        flex-direction: column;
+    }
+    
+    .profile-actions .btn {
+        width: 100%;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+</style>
+{% endblock %}
+

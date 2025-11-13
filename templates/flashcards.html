@@ -21,8 +21,8 @@
     <div class="flashcards-main">
         <div class="container">
             <div class="flashcard-header">
-                <h2>Security+ Study Sections</h2>
-                <p>Select a section to start practicing with flashcards organized by CompTIA Security+ SY0-701 exam domains</p>
+                <h2>Security+ Flashcard Sections</h2>
+                <p>Select a section to start practicing with flashcards. Each section contains terms and definitions organized by Security+ topics.</p>
             </div>
 
             <div class="sections-grid" id="sections-grid">
@@ -73,9 +73,8 @@ document.addEventListener('DOMContentLoaded', function() {
         card.className = 'section-card';
         card.dataset.section = section.section_number;
         
-        // Calculate exam percentage based on question count
-        const examPercentages = [20, 30, 20, 20, 10]; // Based on SY0-701 exam domains
-        const examPercentage = examPercentages[section.section_number - 1] || 20;
+        // Display actual flashcard count per section
+        const cardCount = section.total_cards || 0;
         
         card.innerHTML = `
             <div class="section-number">${section.section_number}</div>
@@ -83,9 +82,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <h3>${section.name}</h3>
                 <p>${section.description}</p>
                 <div class="section-stats">
-                    <span class="exam-percentage">${examPercentage}% of exam</span>
-                    <span class="section-count">${section.categories.length} categories</span>
-                    <span class="card-count">${section.total_cards} cards</span>
+                    <span class="card-count">${cardCount} flashcards</span>
                 </div>
                 <button class="btn btn-primary start-section" data-section="${section.section_number}">
                     Start Section ${section.section_number}

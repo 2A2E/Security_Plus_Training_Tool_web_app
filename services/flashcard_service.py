@@ -2,11 +2,10 @@
 Flashcard Service - Handles flashcard operations and session management
 Organized by CompTIA Security+ SY0-701 Exam Domains (5 Sections)
 """
-import json
 import random
 import time
 from typing import List, Dict, Any, Optional
-from database.question_manager import question_manager
+from database.flashcard_manager import flashcard_manager
 import logging
 
 logger = logging.getLogger(__name__)
@@ -83,7 +82,9 @@ class FlashcardService:
                 'Identity and Access Management',
                 'Physical Security',
                 'Personnel Security'
-            ]
+            ],
+            'deck_names': ['Part 1', 'part1', 'Part1', 'Section 1', 'General Security Concepts', 'Section1'],
+            'tags': ['General Security Concepts', 'Zero Trust', 'Cryptography', 'PKI', 'IAM', 'Physical Security']
         },
         2: {
             'name': 'Threats, Vulnerabilities, and Mitigations',
@@ -101,7 +102,9 @@ class FlashcardService:
                 'Malware',
                 'Exploits',
                 'Vulnerability Management'
-            ]
+            ],
+            'deck_names': ['Part 2', 'part2', 'Part2', 'Section 2', 'Threats, Vulnerabilities, and Mitigations', 'Section2'],
+            'tags': ['Threats', 'Vulnerabilities', 'Attacks', 'Malware', 'Exploits']
         },
         3: {
             'name': 'Security Architecture',
@@ -114,7 +117,9 @@ class FlashcardService:
                 'Embedded/IoT/SCADA',
                 'Resiliency',
                 'Technologies and Tools'
-            ]
+            ],
+            'deck_names': ['Part 3', 'part3', 'Part3', 'Section 3', 'Security Architecture', 'Section3'],
+            'tags': ['Security Architecture', 'Network Design', 'Cloud', 'Virtualization']
         },
         4: {
             'name': 'Security Operations',
@@ -125,7 +130,9 @@ class FlashcardService:
                 'Digital Forensics',
                 'SIEM and Monitoring',
                 'Security Tools'
-            ]
+            ],
+            'deck_names': ['Part 4', 'part4', 'Part4', 'Section 4', 'Security Operations', 'Section4'],
+            'tags': ['Security Operations', 'Incident Response', 'Forensics', 'SIEM']
         },
         5: {
             'name': 'Security Program Management and Oversight',
@@ -136,24 +143,72 @@ class FlashcardService:
                 'Risk Management',
                 'Policies and Procedures',
                 'Regulations and Standards'
-            ]
+            ],
+            'deck_names': ['Part 5', 'part5', 'Part5', 'Section 5', 'Security Program Management and Oversight', 'Section5'],
+            'tags': ['Governance', 'Risk Management', 'Compliance', 'Policies', 'Standards']
         }
     }
     
     def __init__(self):
-        self.question_manager = question_manager
+        self.flashcard_manager = flashcard_manager
         self.sessions = {}  # In-memory session storage
         self._cleanup_expired_sessions()
     
     def get_all_sections(self) -> List[Dict[str, Any]]:
         """Get all available sections with their flashcard counts"""
+        if not self.flashcard_manager:
+            logger.error("Flashcard manager not initialized")
+            return []
+        
+        # First, get all available decks to see what we're working with
+        available_decks = self.flashcard_manager.get_flashcard_decks()
+        logger.info(f"Available decks in database: {available_decks}")
+        
+        # Get total count of all flashcards
+        total_all_flashcards = self.flashcard_manager.get_flashcard_count()
+        logger.info(f"Total flashcards in database: {total_all_flashcards}")
+        
         sections = []
         for section_num, section_data in self.SECTION_CATEGORIES.items():
-            # Count total questions in this section
+            # Count flashcards for this section by trying to match deck names
             total_cards = 0
-            for category in section_data['categories']:
-                count = self.question_manager.get_question_count(category=category)
-                total_cards += count
+            deck_names = section_data.get('deck_names', [])
+            tags = section_data.get('tags', [])
+            
+            logger.info(f"Section {section_num}: Trying deck names {deck_names}")
+            
+            # Try to match by deck name first
+            for deck_name in deck_names:
+                count = self.flashcard_manager.get_flashcard_count(deck=deck_name)
+                if count > 0:
+                    total_cards = count
+                    logger.info(f"Section {section_num}: Found {total_cards} flashcards for deck '{deck_name}'")
+                    break
+            
+            # If no deck match found, try to count by tags
+            if total_cards == 0 and tags:
+                # Get all flashcards and filter by tags
+                all_flashcards = self.flashcard_manager.get_flashcards(limit=10000)
+                matched_flashcards = []
+                for flashcard in all_flashcards:
+                    flashcard_tags = flashcard.get('tags', [])
+                    if isinstance(flashcard_tags, list):
+                        if any(tag in flashcard_tags for tag in tags):
+                            matched_flashcards.append(flashcard)
+                    elif isinstance(flashcard_tags, str):
+                        if any(tag in flashcard_tags for tag in tags):
+                            matched_flashcards.append(flashcard)
+                total_cards = len(matched_flashcards)
+                if total_cards > 0:
+                    logger.info(f"Section {section_num}: Found {total_cards} flashcards matching tags")
+            
+            # If still no match and we have flashcards, split them evenly across sections
+            # This handles the case where deck names don't match but we still want to show counts
+            if total_cards == 0 and total_all_flashcards > 0:
+                # Check if any section already matched - if so, don't split
+                # Otherwise, split evenly
+                total_cards = total_all_flashcards // len(self.SECTION_CATEGORIES)
+                logger.info(f"Section {section_num}: No deck match found, splitting evenly: {total_cards} cards")
             
             sections.append({
                 'section_number': section_num,
@@ -172,47 +227,95 @@ class FlashcardService:
                 logger.error(f"Invalid section number: {section}. Must be 1-5.")
                 return None
             
-            section_data = self.SECTION_CATEGORIES[section]
-            categories = section_data['categories']
-            
-            # Get questions from all categories in this section
-            all_questions = []
-            for category in categories:
-                questions = self.question_manager.get_questions(
-                    category=category,
-                    limit=100  # Get more questions to have a good pool
-                )
-                all_questions.extend(questions)
-            
-            if not all_questions:
-                logger.warning(f"No questions found for section {section}")
+            if not self.flashcard_manager:
+                logger.error("Flashcard manager not initialized")
                 return None
             
-            # Parse JSON fields in questions
-            all_questions = self._parse_question_json_fields(all_questions)
+            section_data = self.SECTION_CATEGORIES[section]
+            deck_names = section_data.get('deck_names', [])
+            tags = section_data.get('tags', [])
             
-            # Convert questions to flashcards
+            # Try to get flashcards by deck name first
             flashcards = []
-            for question in all_questions:
-                flashcard = self._convert_question_to_flashcard(question)
-                if flashcard:
-                    flashcards.append(flashcard)
+            for deck_name in deck_names:
+                deck_flashcards = self.flashcard_manager.get_flashcards(deck=deck_name, limit=10000)
+                if deck_flashcards:
+                    flashcards = deck_flashcards
+                    logger.info(f"Found {len(flashcards)} flashcards for deck: {deck_name}")
+                    break
+            
+            # If no deck match found, try to filter by tags
+            if not flashcards and tags:
+                all_flashcards = self.flashcard_manager.get_flashcards(limit=10000)
+                for flashcard in all_flashcards:
+                    flashcard_tags = flashcard.get('tags', [])
+                    if isinstance(flashcard_tags, list):
+                        if any(tag in flashcard_tags for tag in tags):
+                            flashcards.append(flashcard)
+                    elif isinstance(flashcard_tags, str):
+                        if any(tag in flashcard_tags for tag in tags):
+                            flashcards.append(flashcard)
+                logger.info(f"Found {len(flashcards)} flashcards matching tags: {tags}")
+            
+            # If still no flashcards found, split all flashcards by section
+            if not flashcards:
+                all_flashcards = self.flashcard_manager.get_flashcards(limit=10000)
+                total_all = len(all_flashcards)
+                if total_all > 0:
+                    # Split flashcards evenly across sections (5 sections)
+                    cards_per_section = total_all // len(self.SECTION_CATEGORIES)
+                    start_idx = (section - 1) * cards_per_section
+                    end_idx = start_idx + cards_per_section
+                    # Last section gets any remainder
+                    if section == len(self.SECTION_CATEGORIES):
+                        end_idx = total_all
+                    flashcards = all_flashcards[start_idx:end_idx]
+                    logger.info(f"Section {section}: Split flashcards - showing {len(flashcards)} cards (indices {start_idx}-{end_idx} of {total_all})")
+                else:
+                    logger.warning(f"No flashcards found for section {section}")
+                    return None
             
             if not flashcards:
+                logger.warning(f"No flashcards found for section {section}")
+                return None
+            
+            # Format flashcards to ensure they have front/back fields
+            formatted_flashcards = []
+            for flashcard in flashcards:
+                formatted_flashcard = {
+                    'id': flashcard.get('id'),
+                    'front': flashcard.get('term', flashcard.get('front', '')),
+                    'back': flashcard.get('definition', flashcard.get('back', '')),
+                    'term': flashcard.get('term', ''),
+                    'definition': flashcard.get('definition', ''),
+                    'category': flashcard.get('deck', flashcard.get('category', '')),
+                    'difficulty': flashcard.get('difficulty', ''),
+                    'tags': flashcard.get('tags', []),
+                    'source': flashcard.get('source', ''),
+                    'deck': flashcard.get('deck', '')
+                }
+                
+                # Skip flashcards without term/definition
+                if not formatted_flashcard['front'] or not formatted_flashcard['back']:
+                    continue
+                
+                formatted_flashcards.append(formatted_flashcard)
+            
+            if not formatted_flashcards:
                 logger.warning(f"No valid flashcards created for section {section}")
                 return None
             
             # Shuffle and optionally limit to requested number
-            random.shuffle(flashcards)
+            random.shuffle(formatted_flashcards)
             if isinstance(limit, int) and limit > 0:
-                flashcards = flashcards[:limit]
+                formatted_flashcards = formatted_flashcards[:limit]
             
             # Create session
             session_id = f"flashcard_{section}_{int(time.time())}"
-            session = FlashcardSession(session_id, section, flashcards)
+            session = FlashcardSession(session_id, section, formatted_flashcards)
             self.sessions[session_id] = session
             
-            logger.info(f"Created flashcard session for section {section} ({section_data['name']}) with {len(flashcards)} cards")
+            logger.info(f"Created flashcard session for section {section} ({section_data['name']}) with {len(formatted_flashcards)} cards")
             return session_id
             
         except Exception as e:
@@ -350,118 +453,54 @@ class FlashcardService:
             del self.sessions[session_id]
             logger.info(f"Cleaned up expired flashcard session: {session_id}")
     
-    def _convert_question_to_flashcard(self, question: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        """Convert a question to flashcard format"""
-        try:
-            # Front of card: question text
-            front = question.get('question_text', '')
-            if not front:
-                return None
-            
-            # Back of card: explanation + correct answer
-            back_parts = []
-            
-            # Add explanation if available
-            explanation = question.get('explanation', '')
-            if explanation:
-                back_parts.append(explanation)
-            
-            # Add correct answer based on question type
-            question_type = question.get('question_type', '').lower()
-            correct_answer = question.get('correct_answer', '')
-            correct_answers = question.get('correct_answers', [])
-            
-            if question_type in ['multiple_choice', 'concept_multiple_choice', 'scenario_multiple_choice']:
-                options = question.get('options', [])
-                if options and correct_answer:
-                    try:
-                        # Handle both string and integer correct answers
-                        if isinstance(correct_answer, str) and correct_answer.isdigit():
-                            answer_index = int(correct_answer) - 1
-                        elif isinstance(correct_answer, int):
-                            answer_index = correct_answer - 1
-                        else:
-                            answer_index = 0
-                        
-                        if 0 <= answer_index < len(options):
-                            back_parts.append(f"Correct Answer: {options[answer_index]}")
-                    except (ValueError, IndexError):
-                        back_parts.append(f"Correct Answer: {correct_answer}")
-            
-            elif question_type == 'true_false':
-                if correct_answer is not None:
-                    back_parts.append(f"Correct Answer: {'True' if correct_answer else 'False'}")
-            
-            elif question_type == 'fill_in_blank':
-                if correct_answers:
-                    if len(correct_answers) == 1:
-                        back_parts.append(f"Correct Answer: {correct_answers[0]}")
-                    else:
-                        back_parts.append(f"Correct Answers: {', '.join(correct_answers)}")
-            
-            # Combine back parts
-            back = '\n\n'.join(back_parts) if back_parts else 'No answer provided'
-            
-            return {
-                'id': question.get('id'),
-                'front': front,
-                'back': back,
-                'category': question.get('category', ''),
-                'difficulty': question.get('difficulty', ''),
-                'question_type': question_type,
-                'tags': question.get('tags', []),
-                'reference': question.get('reference', '')
-            }
-            
-        except Exception as e:
-            logger.error(f"Error converting question to flashcard: {e}")
-            return None
-    
-    def _parse_question_json_fields(self, questions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """Parse JSON fields in questions"""
-        for question in questions:
-            # Parse options
-            if question.get('options'):
-                if isinstance(question['options'], str):
-                    try:
-                        question['options'] = json.loads(question['options'])
-                    except json.JSONDecodeError:
-                        question['options'] = []
-            
-            # Parse tags
-            if question.get('tags'):
-                if isinstance(question['tags'], str):
-                    try:
-                        question['tags'] = json.loads(question['tags'])
-                    except json.JSONDecodeError:
-                        question['tags'] = []
-            
-            # Parse correct_answers
-            if question.get('correct_answers'):
-                if isinstance(question['correct_answers'], str):
-                    try:
-                        question['correct_answers'] = json.loads(question['correct_answers'])
-                    except json.JSONDecodeError:
-                        question['correct_answers'] = [question['correct_answers']]
-        
-        return questions
     
     def get_section_info(self, section: int) -> Optional[Dict[str, Any]]:
         """Get detailed information about a specific section"""
         if section not in self.SECTION_CATEGORIES:
             return None
         
-        section_data = self.SECTION_CATEGORIES[section]
+        if not self.flashcard_manager:
+            logger.error("Flashcard manager not initialized")
+            return None
         
-        # Count cards per category in this section
+        section_data = self.SECTION_CATEGORIES[section]
+        deck_names = section_data.get('deck_names', [])
+        tags = section_data.get('tags', [])
+        
+        # Count cards per category/deck in this section
         category_breakdown = []
         total_cards = 0
-        for category in section_data['categories']:
-            count = self.question_manager.get_question_count(category=category)
-            total_cards += count
+        
+        # Try to count by deck names
+        for deck_name in deck_names:
+            count = self.flashcard_manager.get_flashcard_count(deck=deck_name)
+            if count > 0:
+                total_cards += count
+                category_breakdown.append({
+                    'category': deck_name,
+                    'card_count': count
+                })
+        
+        # If no deck match, try to count by tags
+        if total_cards == 0 and tags:
+            all_flashcards = self.flashcard_manager.get_flashcards(limit=10000)
+            for tag in tags:
+                matching_flashcards = [f for f in all_flashcards 
+                                     if tag in f.get('tags', [])]
+                count = len(matching_flashcards)
+                if count > 0:
+                    total_cards += count
+                    category_breakdown.append({
+                        'category': tag,
+                        'card_count': count
+                    })
+        
+        # If still no cards, count all flashcards
+        if total_cards == 0:
+            total_cards = self.flashcard_manager.get_flashcard_count()
             category_breakdown.append({
-                'category': category,
-                'card_count': count
+                'category': 'All Flashcards',
+                'card_count': total_cards
             })
         
         return {

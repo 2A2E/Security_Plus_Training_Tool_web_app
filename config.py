@@ -25,6 +25,10 @@ class Config:
     # Application settings
     APP_NAME = 'Security Plus Training Tool'
     APP_VERSION = '1.0.0'
+    # APP_URL should be set via environment variable for production
+    # Default to production domain: https://securityplustrainingprogram.com
+    # For local development, set: export APP_URL=http://localhost:5000
+    APP_URL = os.environ.get('APP_URL', 'https://securityplustrainingprogram.com')  # Base URL for redirects
     
     # Pagination
     POSTS_PER_PAGE = 10

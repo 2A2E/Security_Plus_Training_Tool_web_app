@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}Confirming Email - Security Plus Training Tool{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div class="container">
+        <h1>Confirming Your Email</h1>
+        <p>Please wait while we verify your account...</p>
+    </div>
+</section>
+
+<section class="auth-content">
+    <div class="container">
+        <div class="auth-container">
+            <div class="auth-card" style="max-width: 500px; margin: 0 auto;">
+                <div class="auth-header">
+                    <h2>Email Confirmation</h2>
+                    <p id="status-message">Processing your confirmation...</p>
+                </div>
+                
+                <div id="loading-spinner" style="text-align: center; padding: 2rem;">
+                    <i class="fas fa-spinner fa-spin fa-3x" style="color: #8b5cf6;"></i>
+                </div>
+                
+                <div id="error-message" style="display: none; padding: 1rem; background: #fee; border: 1px solid #fcc; border-radius: 8px; margin-top: 1rem;">
+                    <p style="color: #c00; margin: 0;"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+// Extract tokens from URL hash (Supabase sends them in the hash)
+function parseHash() {
+    const hash = window.location.hash.substring(1);
+    const params = {};
+    
+    console.log('URL hash:', hash);
+    console.log('Current URL:', window.location.href);
+    
+    if (hash) {
+        hash.split('&').forEach(param => {
+            const [key, value] = param.split('=');
+            if (key && value) {
+                params[decodeURIComponent(key)] = decodeURIComponent(value);
+            }
+        });
+    }
+    
+    // Also check query parameters as fallback
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.forEach((value, key) => {
+        params[key] = value;
+    });
+    
+    console.log('Parsed params:', params);
+    return params;
+}
+
+// Handle the confirmation
+async function handleConfirmation() {
+    const params = parseHash();
+    
+    // Check for errors
+    if (params.error) {
+        document.getElementById('loading-spinner').style.display = 'none';
+        const errorDiv = document.getElementById('error-message');
+        const errorMsg = params.error_description || params.error || 'An error occurred';
+        errorDiv.querySelector('p').textContent = `Error: ${errorMsg}`;
+        errorDiv.style.display = 'block';
+        
+        setTimeout(() => {
+            window.location.href = '/login';
+        }, 3000);
+        return;
+    }
+    
+    // Check for tokens
+    if (params.access_token && params.refresh_token) {
+        // Send tokens to backend to set session
+        try {
+            const callbackUrl = '/auth/callback?' + new URLSearchParams({
+                access_token: params.access_token,
+                refresh_token: params.refresh_token
+            });
+            
+            console.log('Sending tokens to:', callbackUrl);
+            
+            const response = await fetch(callbackUrl, {
+                method: 'GET',
+                credentials: 'include' // Important for cookies/session
+            });
+            
+            console.log('Response status:', response.status);
+            
+            if (response.ok || response.redirected) {
+                // Redirect to home page
+                window.location.href = '/';
+            } else {
+                const responseText = await response.text();
+                console.error('Response error:', responseText);
+                throw new Error('Failed to confirm email');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            document.getElementById('loading-spinner').style.display = 'none';
+            const errorDiv = document.getElementById('error-message');
+            errorDiv.querySelector('p').textContent = 'Error confirming your email. Please try logging in.';
+            errorDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                window.location.href = '/login';
+            }, 3000);
+        }
+    } else {
+        // No tokens found - check if we're on the right page
+        console.log('No tokens found. Params:', params);
+        document.getElementById('loading-spinner').style.display = 'none';
+        document.getElementById('status-message').textContent = 'Invalid confirmation link. Redirecting to login...';
+        
+        setTimeout(() => {
+            window.location.href = '/login';
+        }, 2000);
+    }
+}
+
+// Run on page load
+window.addEventListener('DOMContentLoaded', handleConfirmation);
+// Also run immediately in case DOMContentLoaded already fired
+if (document.readyState === 'loading') {
+    // DOM hasn't finished loading yet
+} else {
+    handleConfirmation();
+}
+</script>
+{% endblock %}
+
